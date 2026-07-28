@@ -15,8 +15,9 @@
   --red:#a31e22; --red-deep:#7a1418;
   --gold:#c8a24a; --gold-light:#e0c47e;
   --cream:#f7f3ea; --ink:#1a1a1a;
-  --paid:#2f7d4f; --paid-bg:#e3f3e9;
   --pending:#c2701a; --pending-bg:#fbeedd;
+  --ready:#215d9c;   --ready-bg:#e6effb;
+  --delivered:#2f7d4f; --delivered-bg:#e3f3e9;
   --shadow: 0 8px 24px rgba(14,42,82,0.16);
   --shadow-sm: 0 2px 8px rgba(14,42,82,0.10);
 }
@@ -27,80 +28,127 @@ body{
   background: var(--cream); color: var(--ink);
   overscroll-behavior-y: none; min-height:100vh; -webkit-font-smoothing:antialiased;
 }
-#app{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--cream); position:relative; padding-bottom:90px; }
+#app{ max-width:480px; margin:0 auto; min-height:100vh; background:var(--cream); position:relative; padding-bottom:94px; }
 
+/* ---- Sync banner ---- */
+.sync-banner{max-width:480px; margin:0 auto; background:#fff6df; color:#8a6d1e; font-size:12px; font-weight:600;
+  padding:8px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(200,162,74,0.3);}
+.sync-banner svg{width:15px;height:15px;flex-shrink:0;}
+.sync-banner.hidden{display:none;}
+
+/* ---- Top bar ---- */
 .topbar{
   background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
-  color: var(--cream); padding: max(18px, env(safe-area-inset-top)) 20px 22px;
+  color: var(--cream); padding: max(16px, env(safe-area-inset-top)) 20px 22px;
   border-radius: 0 0 28px 28px; position:relative; overflow:hidden; box-shadow:var(--shadow);
 }
-.topbar::after{ content:""; position:absolute; right:-30px; top:-30px; width:140px; height:140px;
-  background: radial-gradient(circle, rgba(200,162,74,0.18), transparent 70%); border-radius:50%; }
-.topbar-row{display:flex; align-items:center; justify-content:space-between; gap:12px;}
-.brand{display:flex; align-items:center; gap:10px;}
-.crest-icon{width:36px;height:42px; flex-shrink:0;}
-.brand-text h1{font-size:18px; font-weight:700; margin:0; letter-spacing:0.3px;}
-.brand-text p{font-size:11px; margin:1px 0 0; opacity:0.65;}
-.summary-row{display:flex; gap:10px; margin-top:18px;}
-.summary-card{flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(200,162,74,0.25); border-radius:14px; padding:10px 12px;}
-.summary-card .num{font-size:20px; font-weight:700; color:var(--gold-light); line-height:1.1;}
-.summary-card .lbl{font-size:10.5px; opacity:0.65; margin-top:2px;}
+.topbar::after{ content:""; position:absolute; right:-30px; top:-30px; width:150px; height:150px;
+  background: radial-gradient(circle, rgba(200,162,74,0.20), transparent 70%); border-radius:50%; }
+.topbar-row{display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative;}
+.brand{display:flex; align-items:center; gap:12px;}
+.crest-badge{width:46px;height:46px;border-radius:14px; background:var(--cream); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.28);}
+.crest-badge img{width:100%; height:100%; object-fit:contain; display:block;}
+.brand-text h1{font-size:19px; font-weight:800; margin:0; letter-spacing:0.2px;}
+.brand-text p{font-size:11px; margin:2px 0 0; opacity:0.62; letter-spacing:0.3px;}
+.sync-pill{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:6px 10px; border-radius:20px;}
+.sync-pill .dot-live{width:8px;height:8px;border-radius:50%; background:#4ad07f; box-shadow:0 0 0 0 rgba(74,208,127,0.7); animation:pulse 2s infinite;}
+.sync-pill.local .dot-live{background:#e0a53a; animation:none; box-shadow:none;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,208,127,0.6)}70%{box-shadow:0 0 0 7px rgba(74,208,127,0)}100%{box-shadow:0 0 0 0 rgba(74,208,127,0)}}
 
+.summary-row{display:flex; gap:10px; margin-top:18px; position:relative;}
+.summary-card{flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(200,162,74,0.25); border-radius:14px; padding:11px 12px;}
+.summary-card .num{font-size:19px; font-weight:800; color:var(--gold-light); line-height:1.1;}
+.summary-card .num.small{font-size:15px;}
+.summary-card .lbl{font-size:10px; opacity:0.66; margin-top:3px; letter-spacing:0.2px;}
+
+/* ---- Calendar ---- */
 .cal-wrap{padding: 18px 16px 8px;}
-.cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding:0 4px;}
-.cal-nav button{width:34px;height:34px;border-radius:50%;border:none;background:var(--navy); color:var(--gold-light); font-size:16px; display:flex; align-items:center; justify-content:center;}
-.cal-nav .cal-title{font-size:16px; font-weight:700; color:var(--navy); text-transform:capitalize;}
+.cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding:0 4px;}
+.cal-nav button{width:36px;height:36px;border-radius:50%;border:none;background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center;}
+.cal-nav button svg{width:18px;height:18px;}
+.cal-nav .cal-title{font-size:16px; font-weight:800; color:var(--navy); text-transform:capitalize;}
 .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
-.cal-dow{text-align:center; font-size:11px; font-weight:700; color:var(--navy-light); opacity:0.55; padding-bottom:4px; text-transform:uppercase;}
-.cal-day{aspect-ratio:1; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#fff; border:1px solid rgba(14,42,82,0.08); font-size:14px; font-weight:600; color:var(--ink); position:relative;}
+.cal-dow{text-align:center; font-size:11px; font-weight:700; color:var(--navy-light); opacity:0.5; padding-bottom:4px; text-transform:uppercase;}
+.cal-day{aspect-ratio:1; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#fff; border:1px solid rgba(14,42,82,0.08); font-size:14px; font-weight:600; color:var(--ink); position:relative;}
 .cal-day.empty{background:transparent; border:none;}
 .cal-day.today{border:2px solid var(--gold);}
 .cal-day.has-orders{background:var(--navy); color:#fff;}
-.cal-day.festivo{background:var(--red-deep); color:rgba(255,255,255,0.55); border:1px solid rgba(122,20,24,0.3); cursor:default;}
+.cal-day.festivo{background:var(--red-deep); color:rgba(255,255,255,0.5); border:1px solid rgba(122,20,24,0.3); cursor:default;}
 .cal-day.festivo.has-orders{background:var(--red-deep);}
 .cal-day.weekend{background:#e4e6ea; color:#aab0bb; border:1px solid rgba(14,42,82,0.05); cursor:default;}
 .cal-day.weekend.has-orders{background:#e4e6ea;}
-.dot-row{display:flex; gap:3px; margin-top:1px;}
+.dot-row{display:flex; gap:3px;}
 .dot{width:5px;height:5px;border-radius:50%;}
-.dot.paid{background:var(--paid);}
-.dot.pending{background:var(--pending);}
-.cal-legend{display:flex; gap:16px; justify-content:center; margin-top:14px; padding-bottom:4px;}
-.legend-item{display:flex; align-items:center; gap:6px; font-size:11.5px; color:#888; font-weight:600;}
-.legend-dot{width:10px;height:10px;border-radius:4px; display:inline-block;}
+.dot.pending{background:#f0a54a;}
+.dot.ready{background:#6aa6e0;}
+.dot.delivered{background:#5fbf85;}
+.cal-legend{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:16px; padding-bottom:4px;}
+.legend-item{display:flex; align-items:center; gap:6px; font-size:11px; color:#888; font-weight:600;}
+.legend-dot{width:9px;height:9px;border-radius:50%; display:inline-block;}
+.legend-sq{width:10px;height:10px;border-radius:4px; display:inline-block;}
 .legend-festivo{background:var(--red-deep);}
 .legend-weekend{background:#e4e6ea; border:1px solid rgba(14,42,82,0.1);}
 
+/* ---- Section / headers ---- */
 .day-view{padding:4px 16px 20px;}
-.day-header{display:flex; align-items:center; justify-content:space-between; margin:10px 0 14px;}
-.back-btn{display:flex; align-items:center; gap:6px; color:var(--navy); font-weight:600; font-size:14px; background:none; border:none; padding:6px 0;}
-.day-title{font-size:17px; font-weight:700; color:var(--navy); text-transform:capitalize;}
-.add-order-btn{width:100%; padding:16px; border-radius:18px; border:none; background:linear-gradient(135deg,var(--red) 0%, var(--red-deep) 100%); color:#fff; font-size:15.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-sm); margin-bottom:18px;}
+.view-title{font-size:20px; font-weight:800; color:var(--navy); margin:16px 2px 14px;}
+.day-header{display:flex; align-items:center; justify-content:space-between; margin:12px 0 6px;}
+.back-btn{display:flex; align-items:center; gap:6px; color:var(--navy); font-weight:700; font-size:14px; background:none; border:none; padding:6px 0;}
+.back-btn svg{width:18px;height:18px;}
+.day-title{font-size:18px; font-weight:800; color:var(--navy); text-transform:capitalize;}
+.add-order-btn{width:100%; padding:16px; border-radius:18px; border:none; background:linear-gradient(135deg,var(--red) 0%, var(--red-deep) 100%); color:#fff; font-size:15.5px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 16px rgba(163,30,34,0.3); margin-bottom:8px;}
+.add-order-btn svg{width:20px;height:20px;}
 .add-order-btn:active{transform:scale(0.98);}
-.section-label{font-size:12px; font-weight:700; color:var(--navy-light); text-transform:uppercase; letter-spacing:0.6px; margin:18px 0 8px 2px; opacity:0.6;}
+.section-label{font-size:12px; font-weight:800; color:var(--navy-light); text-transform:uppercase; letter-spacing:0.6px; margin:20px 0 10px 2px; opacity:0.6;}
 
-.order-card{background:#fff; border-radius:16px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(14,42,82,0.07); box-shadow:var(--shadow-sm);}
-.order-avatar{width:42px;height:42px;border-radius:50%; flex-shrink:0; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;}
-.order-avatar.teacher{background:var(--red);}
+/* ---- Order card ---- */
+.order-card{background:#fff; border-radius:16px; padding:13px 14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; border:1px solid rgba(14,42,82,0.07); box-shadow:var(--shadow-sm);}
+.order-card.is-delivered{opacity:0.62;}
+.order-avatar{width:44px;height:44px;border-radius:50%; flex-shrink:0; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;}
+.order-avatar.teacher{background:var(--red); color:#fff;}
 .order-info{flex:1; min-width:0;}
-.order-name{font-size:14.5px; font-weight:700; color:var(--ink);}
-.order-meta{font-size:12px; color:#888; margin-top:1px;}
-.order-qty{font-size:13px; font-weight:700; color:var(--navy); background:var(--cream); padding:3px 9px; border-radius:10px; flex-shrink:0;}
-.order-status{flex-shrink:0; padding:6px 12px; border-radius:12px; font-size:12px; font-weight:700;}
-.order-status.paid{background:var(--paid-bg); color:var(--paid);}
-.order-status.pending{background:var(--pending-bg); color:var(--pending);}
+.order-name{font-size:14.5px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.order-meta{font-size:12px; color:#8a8f98; margin-top:2px; display:flex; align-items:center; gap:6px;}
+.qty-badge{font-size:12px; font-weight:800; color:var(--navy); background:var(--cream); padding:2px 8px; border-radius:9px;}
+.order-right{display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0;}
+.status-chip{padding:5px 11px; border-radius:11px; font-size:11.5px; font-weight:800; display:flex; align-items:center; gap:4px; white-space:nowrap;}
+.status-chip svg{width:12px;height:12px;}
+.status-chip.pending{background:var(--pending-bg); color:var(--pending);}
+.status-chip.ready{background:var(--ready-bg); color:var(--ready);}
+.status-chip.delivered{background:var(--delivered-bg); color:var(--delivered);}
 
-.empty-state{text-align:center; padding:40px 20px; color:#999;}
-.empty-state .es-icon{font-size:34px; opacity:0.3; margin-bottom:8px;}
-.empty-state p{font-size:14px; margin:0;}
+/* ---- Delivery queue ---- */
+.deliver-toggle{display:flex; gap:8px; margin:2px 0 16px;}
+.deliver-toggle .filter-chip{flex:1;}
+.deliver-card{background:#fff; border-radius:18px; padding:14px; margin-bottom:12px; border:1px solid rgba(14,42,82,0.08); box-shadow:var(--shadow-sm);}
+.deliver-top{display:flex; align-items:center; gap:12px;}
+.deliver-top .order-info .order-name{font-size:15.5px;}
+.deliver-qty-big{font-size:15px; font-weight:800; color:#fff; background:var(--navy); min-width:40px; height:40px; padding:0 10px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.deliver-btn{width:100%; margin-top:12px; padding:14px; border-radius:14px; border:none; background:linear-gradient(135deg,#2f7d4f,#256b42); color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 5px 14px rgba(47,125,79,0.28);}
+.deliver-btn svg{width:19px;height:19px;}
+.deliver-btn:active{transform:scale(0.98);}
+.date-group-label{font-size:12.5px; font-weight:800; color:var(--navy); text-transform:capitalize; margin:16px 2px 10px; display:flex; align-items:center; gap:8px;}
+.date-group-label .pill{font-size:11px; font-weight:700; color:#fff; background:var(--gold); border-radius:20px; padding:2px 9px;}
 
+/* ---- Empty ---- */
+.empty-state{text-align:center; padding:44px 20px; color:#9aa0a8;}
+.empty-state .es-icon{opacity:0.28; margin-bottom:10px; display:flex; justify-content:center;}
+.empty-state .es-icon svg{width:44px;height:44px;}
+.empty-state p{font-size:14px; margin:0; font-weight:600;}
+.empty-state .es-sub{font-size:12.5px; margin-top:4px; opacity:0.8; font-weight:500;}
+
+/* ---- Modal / sheet ---- */
 .modal-overlay{position:fixed; inset:0; background:rgba(8,20,40,0.55); display:flex; align-items:flex-end; justify-content:center; z-index:1000; opacity:0; pointer-events:none; transition:opacity 0.25s ease;}
 .modal-overlay.show{opacity:1; pointer-events:auto;}
-.sheet{background:var(--cream); width:100%; max-width:480px; border-radius:28px 28px 0 0; max-height:88vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.32,0.72,0,1); padding-bottom:max(20px, env(safe-area-inset-bottom));}
+.sheet{background:var(--cream); width:100%; max-width:480px; border-radius:28px 28px 0 0; max-height:90vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.32,0.72,0,1); padding-bottom:max(20px, env(safe-area-inset-bottom));}
 .modal-overlay.show .sheet{transform:translateY(0);}
-.sheet-handle{width:36px; height:4px; background:rgba(14,42,82,0.18); border-radius:2px; margin:10px auto 4px;}
-.sheet-header{display:flex; align-items:center; justify-content:space-between; padding:8px 20px 14px;}
-.sheet-title{font-size:17px; font-weight:700; color:var(--navy);}
-.sheet-close{width:30px;height:30px;border-radius:50%; background:rgba(14,42,82,0.06); border:none; display:flex; align-items:center; justify-content:center; color:var(--navy); font-size:16px;}
+.sheet-handle{width:38px; height:4px; background:rgba(14,42,82,0.18); border-radius:2px; margin:10px auto 4px;}
+.sheet-header{display:flex; align-items:center; justify-content:space-between; padding:8px 20px 12px;}
+.sheet-title{font-size:17px; font-weight:800; color:var(--navy);}
+.sheet-close{width:30px;height:30px;border-radius:50%; background:rgba(14,42,82,0.06); border:none; display:flex; align-items:center; justify-content:center; color:var(--navy);}
+.sheet-close svg{width:16px;height:16px;}
 .sheet-body{padding:4px 20px 24px;}
 
 .step-progress{display:flex; gap:5px; padding:0 20px 14px;}
@@ -114,157 +162,226 @@ body{
 .tab-chip.active{background:var(--navy); color:var(--gold-light); border-color:var(--navy);}
 .tab-chip.teacher-chip.active{background:var(--red); color:#fff; border-color:var(--red);}
 
-.search-input{width:100%; padding:13px 16px; border-radius:14px; border:1.5px solid rgba(14,42,82,0.1); font-size:14px; margin-bottom:14px; background:#fff;}
+.search-input{width:100%; padding:13px 16px; border-radius:14px; border:1.5px solid rgba(14,42,82,0.1); font-size:15px; margin-bottom:14px; background:#fff;}
 .search-input:focus{outline:none; border-color:var(--gold);}
 
 .person-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
 .person-card{background:#fff; border-radius:16px; padding:12px 6px; text-align:center; border:1.5px solid rgba(14,42,82,0.08); display:flex; flex-direction:column; align-items:center; gap:6px;}
 .person-card.selected{border-color:var(--gold); background:#fffaf0; box-shadow:0 0 0 2px rgba(200,162,74,0.25);}
-.person-avatar{width:46px;height:46px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px;}
+.person-avatar{width:46px;height:46px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px;}
 .person-card.teacher .person-avatar{background:var(--red); color:#fff;}
 .person-name{font-size:12px; font-weight:600; color:var(--ink); line-height:1.25;}
 
-.qty-stepper{display:flex; align-items:center; justify-content:center; gap:24px; padding:24px 0 6px;}
-.qty-btn{width:54px;height:54px;border-radius:50%; border:none; background:var(--navy); color:#fff; font-size:24px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+.qty-stepper{display:flex; align-items:center; justify-content:center; gap:24px; padding:22px 0 6px;}
+.qty-btn{width:54px;height:54px;border-radius:50%; border:none; background:var(--navy); color:#fff; font-size:26px; font-weight:700; display:flex; align-items:center; justify-content:center;}
 .qty-btn:active{transform:scale(0.94);}
 .qty-btn.minus{background:rgba(14,42,82,0.08); color:var(--navy);}
-.qty-display{font-size:40px; font-weight:700; color:var(--navy); min-width:64px; text-align:center;}
-.quick-qty-row{display:flex; gap:8px; justify-content:center; padding:6px 0 20px; flex-wrap:wrap;}
-.quick-qty-btn{padding:8px 16px; border-radius:12px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:14px; font-weight:700; color:var(--navy-light);}
+.qty-display{font-size:44px; font-weight:800; color:var(--navy); min-width:70px; text-align:center;}
+.qty-sub{text-align:center; font-size:13px; color:#8a8f98; font-weight:600; margin-bottom:6px;}
+.quick-qty-row{display:flex; gap:8px; justify-content:center; padding:6px 0 18px; flex-wrap:wrap;}
+.quick-qty-btn{padding:8px 16px; border-radius:12px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:14px; font-weight:800; color:var(--navy-light);}
 .quick-qty-btn.active{background:var(--gold); border-color:var(--gold); color:var(--navy-deep);}
 
-.confirm-summary{background:#fff; border-radius:18px; padding:18px; margin-bottom:16px; border:1px solid rgba(14,42,82,0.08);}
-.confirm-row{display:flex; justify-content:space-between; padding:7px 0; font-size:14px;}
-.confirm-row .k{color:#888;}
-.confirm-row .v{font-weight:700; color:var(--ink);}
-.confirm-divider{height:1px; background:rgba(14,42,82,0.08); margin:6px 0;}
+.confirm-summary{background:#fff; border-radius:18px; padding:16px 18px; margin-bottom:16px; border:1px solid rgba(14,42,82,0.08);}
+.confirm-row{display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:14px;}
+.confirm-row .k{color:#8a8f98;}
+.confirm-row .v{font-weight:800; color:var(--ink); text-align:right;}
+.confirm-row .v.total{color:var(--navy); font-size:16px;}
+.confirm-divider{height:1px; background:rgba(14,42,82,0.08); margin:5px 0;}
 
-.payment-toggle{display:flex; gap:10px; margin-bottom:20px;}
-.pay-option{flex:1; padding:16px; border-radius:16px; border:1.5px solid rgba(14,42,82,0.1); background:#fff; text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px;}
-.pay-option span{font-size:13px; font-weight:700;}
+.payment-toggle{display:flex; gap:10px; margin-bottom:6px;}
+.pay-option{flex:1; padding:15px 10px; border-radius:16px; border:1.5px solid rgba(14,42,82,0.1); background:#fff; text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px;}
+.pay-option svg{width:22px;height:22px;}
+.pay-option span{font-size:13px; font-weight:800;}
 .pay-option.pending-opt.active{border-color:var(--pending); background:var(--pending-bg); color:var(--pending);}
-.pay-option.paid-opt.active{border-color:var(--paid); background:var(--paid-bg); color:var(--paid);}
-.pay-option:not(.active){color:#999;}
+.pay-option.paid-opt.active{border-color:var(--delivered); background:var(--delivered-bg); color:var(--delivered);}
+.pay-option:not(.active){color:#9aa0a8;}
+.pay-hint{font-size:11.5px; color:#8a8f98; text-align:center; margin:8px 2px 4px; line-height:1.4;}
 
-.primary-btn{width:100%; padding:16px; border-radius:16px; border:none; background:var(--navy); color:#fff; font-size:15.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;}
+.primary-btn{width:100%; padding:16px; border-radius:16px; border:none; background:var(--navy); color:#fff; font-size:15.5px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;}
+.primary-btn svg{width:19px;height:19px;}
 .primary-btn:disabled{background:rgba(14,42,82,0.2); color:rgba(255,255,255,0.6);}
 .primary-btn:active:not(:disabled){transform:scale(0.98);}
-.secondary-btn{width:100%; padding:14px; border-radius:16px; border:1.5px solid rgba(14,42,82,0.12); background:transparent; color:var(--navy-light); font-size:14.5px; font-weight:600; margin-top:10px;}
+.primary-btn.green{background:linear-gradient(135deg,#2f7d4f,#256b42);}
+.primary-btn.danger{background:var(--red);}
+.secondary-btn{width:100%; padding:14px; border-radius:16px; border:1.5px solid rgba(14,42,82,0.12); background:transparent; color:var(--navy-light); font-size:14.5px; font-weight:700; margin-top:10px;}
 
-.person-avatar-lg{width:64px;height:64px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; margin:6px auto 14px;}
+.person-avatar-lg{width:66px;height:66px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; margin:6px auto 14px;}
 .action-list{display:flex; flex-direction:column; gap:8px;}
-.action-item{display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; background:#fff; border:1px solid rgba(14,42,82,0.08); font-size:14.5px; font-weight:600; color:var(--ink); width:100%; text-align:left;}
-.action-item.danger{color:var(--red);}
+.action-item{display:flex; align-items:center; gap:12px; padding:15px 16px; border-radius:14px; background:#fff; border:1px solid rgba(14,42,82,0.08); font-size:14.5px; font-weight:700; color:var(--ink); width:100%; text-align:left;}
+.action-item svg{width:20px;height:20px; flex-shrink:0; color:var(--navy);}
+.action-item.danger, .action-item.danger svg{color:var(--red);}
+.action-item.green, .action-item.green svg{color:var(--delivered);}
+.mini-stepper{display:flex; align-items:center; gap:14px; margin-left:auto;}
+.mini-stepper button{width:34px;height:34px;border-radius:50%;border:none; background:rgba(14,42,82,0.08); color:var(--navy); font-size:20px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+.mini-stepper .mv{font-size:17px; font-weight:800; color:var(--navy); min-width:22px; text-align:center;}
 
+.status-track{display:flex; align-items:center; gap:0; margin:14px 0 4px; padding:0 4px;}
+.track-step{flex:1; text-align:center; position:relative;}
+.track-dot{width:26px;height:26px;border-radius:50%; background:rgba(14,42,82,0.1); color:#fff; display:flex; align-items:center; justify-content:center; margin:0 auto 5px; font-size:12px;}
+.track-dot svg{width:14px;height:14px;}
+.track-step.done .track-dot{background:var(--delivered);}
+.track-step.current .track-dot{background:var(--gold); color:var(--navy-deep);}
+.track-lbl{font-size:10.5px; font-weight:700; color:#8a8f98;}
+.track-step.done .track-lbl, .track-step.current .track-lbl{color:var(--navy);}
+.track-line{position:absolute; top:13px; left:50%; width:100%; height:2px; background:rgba(14,42,82,0.1); z-index:-1;}
+.track-step.done .track-line{background:var(--delivered);}
+
+/* ---- Bottom nav ---- */
 .bottom-nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; border-top:1px solid rgba(14,42,82,0.08); display:flex; padding:8px 0 max(8px, env(safe-area-inset-bottom)); box-shadow:0 -4px 16px rgba(14,42,82,0.06); z-index:50;}
-.nav-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; color:#aaa; padding:6px 0; font-size:10.5px; font-weight:600;}
-.nav-item svg{width:21px; height:21px;}
+.nav-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; color:#aab0b8; padding:6px 0; font-size:10.5px; font-weight:700; position:relative;}
+.nav-item svg{width:22px; height:22px;}
 .nav-item.active{color:var(--navy);}
+.nav-badge{position:absolute; top:2px; left:calc(50% + 8px); background:var(--red); color:#fff; font-size:9.5px; font-weight:800; min-width:16px; height:16px; border-radius:10px; padding:0 4px; display:flex; align-items:center; justify-content:center;}
 
-.toast{position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy-deep); color:#fff; padding:12px 22px; border-radius:14px; font-size:13.5px; font-weight:600; opacity:0; transition:all 0.3s ease; z-index:2000; box-shadow:var(--shadow); white-space:nowrap;}
+.toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy-deep); color:#fff; padding:12px 22px; border-radius:14px; font-size:13.5px; font-weight:700; opacity:0; transition:all 0.3s ease; z-index:2000; box-shadow:var(--shadow); white-space:nowrap; display:flex; align-items:center; gap:8px;}
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast svg{width:16px;height:16px;}
 
-.fab{position:fixed; bottom:96px; right:max(20px, calc(50vw - 220px)); width:56px;height:56px;border-radius:50%; border:none; background:linear-gradient(135deg,var(--red),var(--red-deep)); color:#fff; font-size:26px; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; z-index:40;}
-.fab:active{transform:scale(0.94);}
+/* ---- Stats ---- */
+.sv-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;}
+.sv-card{background:#fff; border-radius:16px; padding:15px; border:1px solid rgba(14,42,82,0.07);}
+.sv-card .sv-num{font-size:22px; font-weight:800; color:var(--navy); line-height:1.1;}
+.sv-card .sv-num.money{font-size:20px;}
+.sv-card .sv-lbl{font-size:11.5px; color:#9aa0a8; margin-top:3px; font-weight:600;}
 
-.view{display:none;}
-.view.active{display:block;}
-
-.sv-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
-.sv-card{background:#fff; border-radius:16px; padding:16px; border:1px solid rgba(14,42,82,0.07);}
-.sv-card .sv-num{font-size:24px; font-weight:700; color:var(--navy);}
-.sv-card .sv-lbl{font-size:11.5px; color:#999; margin-top:2px;}
-
-.list-row{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:13px 16px; margin-bottom:8px; border:1px solid rgba(14,42,82,0.07);}
-.list-row .lr-name{flex:1; font-size:14px; font-weight:600;}
-.list-row .lr-val{font-size:13px; font-weight:700; color:var(--navy);}
-.list-row .lr-avatar{width:36px;height:36px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0;}
+.list-row{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:8px; border:1px solid rgba(14,42,82,0.07);}
+.list-row .lr-name{flex:1; font-size:14px; font-weight:700;}
+.list-row .lr-val{font-size:13px; font-weight:800; color:var(--navy);}
+.list-row .lr-avatar{width:36px;height:36px;border-radius:50%; background:var(--navy); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0;}
 .list-row .lr-avatar.teacher{background:var(--red);}
 
-.filter-row{display:flex; gap:8px; margin-bottom:14px;}
-.filter-chip{flex:1; padding:9px; border-radius:12px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:13px; font-weight:700; color:var(--navy-light); text-align:center;}
+.filter-row{display:flex; gap:7px; margin-bottom:14px;}
+.filter-chip{flex:1; padding:9px 4px; border-radius:12px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:12.5px; font-weight:800; color:var(--navy-light); text-align:center;}
 .filter-chip.active{background:var(--navy); color:var(--gold-light); border-color:var(--navy);}
 
-@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .rocket-anim{animation:floatY 3s ease-in-out infinite;}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div class="toast" id="toast"></div>
+
+<!-- Firebase (sincronización en la nube). Si no hay internet o no está configurado, la app corre en modo local. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="data.js"></script>
 <script>
-// ============ ICONS (inline SVG, no external deps) ============
+// ============ ICONS ============
 const ICONS = {
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>',
   list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
-  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 13l4 4L19 7"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
-  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>',
-  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>',
-  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 18l-6-6 6-6"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a1 1 0 01-1 1H7a1 1 0 01-1-1V6"/></svg>',
   cone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 9h10l-3.5 11a1 1 0 01-2 0L7 9z"/><path d="M5 9c0-3 3-6 7-6s7 3 7 6"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v1"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18a4 4 0 010-8 6 6 0 0111.5-1.5A4.5 4.5 0 0118 18z"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>',
 };
 
 // ============ STATE & PERSISTENCE ============
-const STORAGE_KEY = 'nas_granizados_orders_v1';
+const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
-try {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  orders = raw ? JSON.parse(raw) : [];
-} catch(e) { orders = []; }
+let cloudOn = false;              // ¿estamos sincronizados con Firebase?
+let db = null;
 
-function saveOrders(){
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)); } catch(e) {}
+function loadLocal(){
+  try { const raw = localStorage.getItem(STORAGE_KEY); orders = raw ? JSON.parse(raw) : []; }
+  catch(e){ orders = []; }
 }
+function saveLocal(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)); } catch(e){} }
 
 function uid(){ return 'o_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
+
+// ---- Persistencia unificada (nube o local) ----
+function upsertOrder(o){
+  const i = orders.findIndex(x => x.id === o.id);
+  if(i >= 0) orders[i] = o; else orders.push(o);
+  saveLocal();
+  if(cloudOn && db){ db.ref('orders/' + o.id).set(o).catch(()=>{}); }
+  render();
+}
+function deleteOrderById(id){
+  orders = orders.filter(x => x.id !== id);
+  saveLocal();
+  if(cloudOn && db){ db.ref('orders/' + id).remove().catch(()=>{}); }
+  render();
+}
+
+// ============ FIREBASE ============
+function cloudConfigured(){
+  return typeof FIREBASE_CONFIG !== 'undefined'
+    && FIREBASE_CONFIG.databaseURL
+    && FIREBASE_CONFIG.databaseURL.indexOf('TU_') === -1
+    && typeof firebase !== 'undefined';
+}
+function initCloud(){
+  if(!cloudConfigured()) return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    cloudOn = true;
+    db.ref('orders').on('value', (snap) => {
+      const val = snap.val() || {};
+      orders = Object.values(val);
+      saveLocal();
+      render();
+    }, () => { /* error de lectura: seguimos con lo local */ });
+  } catch(e) { cloudOn = false; db = null; }
+}
 
 const GRADES = ['1st','2nd','3rd','4th','5th'];
 const GRADE_LABELS = {'1st':'1°','2nd':'2°','3rd':'3°','4th':'4°','5th':'5°'};
 
 function initials(name){
-  const parts = name.trim().split(' ');
-  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  const parts = (name||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return '?';
+  const a = parts[0][0] || '';
+  const b = parts[1] ? parts[1][0] : '';
+  return (a + b).toUpperCase();
 }
-
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function pad(n){ return n < 10 ? '0'+n : ''+n; }
 function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
 function todayKey(){ const t = new Date(); return dateKey(t.getFullYear(), t.getMonth(), t.getDate()); }
+function formatCOP(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
+function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : (GRADE_LABELS[o.grade] + ' grado'); }
 
 const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DOW = ['D','L','M','M','J','V','S'];
 
-// Festivos oficiales de Colombia 2026 (incluye el nuevo festivo de la Virgen de Chiquinquirá, 13 de julio)
 const FESTIVOS_2026 = {
-  '2026-01-01': 'Año Nuevo',
-  '2026-01-12': 'Reyes Magos',
-  '2026-03-23': 'San José',
-  '2026-04-02': 'Jueves Santo',
-  '2026-04-03': 'Viernes Santo',
-  '2026-05-01': 'Día del Trabajo',
-  '2026-05-18': 'Ascensión del Señor',
-  '2026-06-08': 'Corpus Christi',
-  '2026-06-15': 'Sagrado Corazón',
-  '2026-06-29': 'San Pedro y San Pablo',
-  '2026-07-13': 'Virgen de Chiquinquirá',
-  '2026-07-20': 'Independencia',
-  '2026-08-07': 'Batalla de Boyacá',
-  '2026-08-17': 'Asunción de la Virgen',
-  '2026-10-12': 'Día de la Raza',
-  '2026-11-02': 'Todos los Santos',
-  '2026-11-16': 'Independencia de Cartagena',
-  '2026-12-08': 'Inmaculada Concepción',
-  '2026-12-25': 'Navidad',
+  '2026-01-01':'Año Nuevo','2026-01-12':'Reyes Magos','2026-03-23':'San José','2026-04-02':'Jueves Santo',
+  '2026-04-03':'Viernes Santo','2026-05-01':'Día del Trabajo','2026-05-18':'Ascensión del Señor',
+  '2026-06-08':'Corpus Christi','2026-06-15':'Sagrado Corazón','2026-06-29':'San Pedro y San Pablo',
+  '2026-07-13':'Virgen de Chiquinquirá','2026-07-20':'Independencia','2026-08-07':'Batalla de Boyacá',
+  '2026-08-17':'Asunción de la Virgen','2026-10-12':'Día de la Raza','2026-11-02':'Todos los Santos',
+  '2026-11-16':'Independencia de Cartagena','2026-12-08':'Inmaculada Concepción','2026-12-25':'Navidad',
 };
-
 function isFestivo(dk){ return FESTIVOS_2026.hasOwnProperty(dk); }
 function festivoName(dk){ return FESTIVOS_2026[dk] || ''; }
-function isWeekend(dow){ return dow === 0 || dow === 6; } // 0=domingo, 6=sábado
-function isDayBlocked(dk, dow){ return isFestivo(dk) || isWeekend(dow); }
+function isWeekend(dow){ return dow === 0 || dow === 6; }
 
+// ---- Estado derivado del pedido: pending -> ready -> delivered ----
+function orderStatus(o){
+  if(o.delivered) return 'delivered';
+  if(o.paid) return 'ready';
+  return 'pending';
+}
+const STATUS_META = {
+  pending:   {label:'Pendiente pago', icon: ICONS.clock},
+  ready:     {label:'Por entregar',   icon: ICONS.truck},
+  delivered: {label:'Entregado',      icon: ICONS.check},
+};
 
 // ============ APP STATE ============
 let state = {
@@ -274,49 +391,58 @@ let state = {
   selectedDate: null,
   modal: null,
   listFilter: 'all',
+  deliverScope: 'today',
 };
 
 const app = document.getElementById('app');
 
-function ordersForDate(dk){
-  return orders.filter(o => o.date === dk);
-}
-
+function ordersForDate(dk){ return orders.filter(o => o.date === dk); }
 function dayStats(dk){
   const list = ordersForDate(dk);
-  const totalQty = list.reduce((s,o) => s + o.qty, 0);
-  const paid = list.filter(o => o.paid).length;
-  const pending = list.filter(o => !o.paid).length;
-  return { count: list.length, totalQty, paid, pending };
+  return {
+    count: list.length,
+    totalQty: list.reduce((s,o)=>s+o.qty,0),
+    pending: list.filter(o=>orderStatus(o)==='pending').length,
+    ready: list.filter(o=>orderStatus(o)==='ready').length,
+    delivered: list.filter(o=>orderStatus(o)==='delivered').length,
+  };
+}
+function deliveryQueue(){ return orders.filter(o => o.paid && !o.delivered); }
+
+// ============ RENDER: SYNC BANNER ============
+function renderSyncBanner(){
+  if(cloudOn) return '';
+  return `<div class="sync-banner">${ICONS.warn}
+    <span>Modo local: los pedidos solo se ven en este dispositivo. Configura Firebase para sincronizar.</span></div>`;
 }
 
 // ============ RENDER: TOP BAR ============
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
-  const pendingTotal = orders.filter(o => !o.paid).length;
-  const monthOrders = orders.filter(o => o.date.startsWith(`${state.calYear}-${pad(state.calMonth+1)}`));
-  const monthQty = monthOrders.reduce((s,o)=>s+o.qty,0);
+  const porEntregar = deliveryQueue().length;
+  const porCobrar = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0) * UNIT_PRICE;
 
   return `
   <div class="topbar">
     <div class="topbar-row">
       <div class="brand">
-        <img src="crest.png" class="crest-icon rocket-anim" alt="NAS" onerror="this.style.display='none'">
+        <div class="crest-badge"><img src="crest.png" class="rocket-anim" alt="NAS" onerror="this.parentElement.style.display='none'"></div>
         <div class="brand-text">
           <h1>NAS Granizados</h1>
           <p>New Academy School</p>
         </div>
       </div>
+      <div class="sync-pill ${cloudOn?'':'local'}"><span class="dot-live"></span>${cloudOn?'En línea':'Local'}</div>
     </div>
     <div class="summary-row">
-      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">Hoy</div></div>
-      <div class="summary-card"><div class="num">${monthQty}</div><div class="lbl">Este mes</div></div>
-      <div class="summary-card"><div class="num">${pendingTotal}</div><div class="lbl">Por cobrar</div></div>
+      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">Granizados hoy</div></div>
+      <div class="summary-card"><div class="num">${porEntregar}</div><div class="lbl">Por entregar</div></div>
+      <div class="summary-card"><div class="num small">${formatCOP(porCobrar)}</div><div class="lbl">Por cobrar</div></div>
     </div>
   </div>`;
 }
 
-// ============ RENDER: CALENDAR VIEW ============
+// ============ RENDER: CALENDAR ============
 function renderCalendar(){
   const y = state.calYear, m = state.calMonth;
   const firstDay = new Date(y, m, 1).getDay();
@@ -342,117 +468,182 @@ function renderCalendar(){
     else if(weekend) classes += ' weekend';
 
     cells += `
-      <div class="${classes}" ${blocked ? '' : `data-date="${dk}"`} ${festivo ? `title="${festivoName(dk)}"` : ''}>
+      <div class="${classes}" ${blocked ? '' : `data-date="${dk}"`} ${festivo ? `title="${esc(festivoName(dk))}"` : ''}>
         <span>${d}</span>
         ${hasOrders ? `<div class="dot-row">
-          ${stats.pending > 0 ? '<div class="dot pending"></div>' : ''}
-          ${stats.paid > 0 ? '<div class="dot paid"></div>' : ''}
+          ${stats.pending>0?'<div class="dot pending"></div>':''}
+          ${stats.ready>0?'<div class="dot ready"></div>':''}
+          ${stats.delivered>0?'<div class="dot delivered"></div>':''}
         </div>` : ''}
       </div>`;
   }
 
   return `
-  <div class="view active" id="view-calendar">
-    <div class="cal-wrap">
-      <div class="cal-nav">
-        <button data-act="prev-month">${ICONS.back}</button>
-        <div class="cal-title">${MONTH_NAMES[m]} ${y}</div>
-        <button data-act="next-month" style="transform:rotate(180deg)">${ICONS.back}</button>
-      </div>
-      <div class="cal-grid">
-        ${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
-        ${cells}
-      </div>
-      <div class="cal-legend">
-        <div class="legend-item"><span class="legend-dot legend-festivo"></span>Festivo</div>
-        <div class="legend-item"><span class="legend-dot legend-weekend"></span>Fin de semana</div>
-      </div>
+  <div class="cal-wrap">
+    <div class="cal-nav">
+      <button data-act="prev-month">${ICONS.back}</button>
+      <div class="cal-title">${MONTH_NAMES[m]} ${y}</div>
+      <button data-act="next-month" style="transform:rotate(180deg)">${ICONS.back}</button>
+    </div>
+    <div class="cal-grid">
+      ${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>
+    <div class="cal-legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#f0a54a"></span>Pend. pago</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#6aa6e0"></span>Por entregar</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#5fbf85"></span>Entregado</div>
+      <div class="legend-item"><span class="legend-sq legend-festivo"></span>Festivo</div>
+      <div class="legend-item"><span class="legend-sq legend-weekend"></span>Fin de semana</div>
     </div>
   </div>`;
 }
 
-// ============ RENDER: DAY VIEW ============
+// ============ RENDER: DAY ============
+function orderCardHtml(o){
+  const st = orderStatus(o);
+  const meta = STATUS_META[st];
+  return `
+    <div class="order-card ${st==='delivered'?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+      <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
+      <div class="order-info">
+        <div class="order-name">${esc(o.personName)}</div>
+        <div class="order-meta">${personTypeLabel(o)} <span class="qty-badge">×${o.qty}</span></div>
+      </div>
+      <div class="order-right">
+        <div class="status-chip ${st}">${meta.icon}${meta.label}</div>
+      </div>
+    </div>`;
+}
 function renderDayView(){
   const dk = state.selectedDate;
   if(!dk) return '';
   const dateObj = new Date(dk + 'T00:00:00');
   const dayLabel = dateObj.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
-  const list = ordersForDate(dk).slice().sort((a,b)=> (a.paid?1:0) - (b.paid?1:0));
+  const list = ordersForDate(dk).slice().sort((a,b)=>{
+    const rank = {pending:0, ready:1, delivered:2};
+    return rank[orderStatus(a)] - rank[orderStatus(b)] || (b.createdAt||0)-(a.createdAt||0);
+  });
+  const st = dayStats(dk);
 
-  const cardsHtml = list.length ? list.map(o => `
-    <div class="order-card" data-act="open-order" data-id="${o.id}">
-      <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
-      <div class="order-info">
-        <div class="order-name">${o.personName}</div>
-        <div class="order-meta">${o.personType==='teacher' ? 'Docente' : GRADE_LABELS[o.grade] + ' grado'}</div>
-      </div>
-      <div class="order-qty">×${o.qty}</div>
-      <div class="order-status ${o.paid?'paid':'pending'}">${o.paid ? 'Pagado' : 'Pendiente'}</div>
-    </div>
-  `).join('') : `
-    <div class="empty-state">
-      <div class="es-icon">${ICONS.cone}</div>
-      <p>Sin pedidos este día todavía</p>
-    </div>`;
+  const cards = list.length ? list.map(orderCardHtml).join('') : `
+    <div class="empty-state"><div class="es-icon">${ICONS.cone}</div>
+      <p>Sin pedidos este día</p><div class="es-sub">Toca “Agregar pedido” para registrar el primero</div></div>`;
 
   return `
-  <div class="view active" id="view-day">
-    <div class="day-view">
-      <div class="day-header">
-        <button class="back-btn" data-act="back-to-cal">${ICONS.back} Calendario</button>
-      </div>
-      <div class="day-title">${dayLabel}</div>
-      <div style="height:14px"></div>
-      <button class="add-order-btn" data-act="new-order">${ICONS.plus} Agregar pedido</button>
-      <div class="section-label">Pedidos del día (${list.length})</div>
-      ${cardsHtml}
+  <div class="day-view">
+    <div class="day-header">
+      <button class="back-btn" data-act="back-to-cal">${ICONS.back} Calendario</button>
     </div>
+    <div class="day-title">${dayLabel}</div>
+    <div style="height:14px"></div>
+    <button class="add-order-btn" data-act="new-order">${ICONS.plus} Agregar pedido</button>
+    <div class="section-label">Pedidos del día · ${list.length} ${st.count?`&nbsp;·&nbsp; ${st.totalQty} granizados`:''}</div>
+    ${cards}
   </div>`;
 }
 
-// ============ RENDER: LIST VIEW ============
+// ============ RENDER: DELIVERY QUEUE ============
+function renderDeliverView(){
+  let q = deliveryQueue();
+  const tk = todayKey();
+  if(state.deliverScope === 'today') q = q.filter(o => o.date === tk);
+  q.sort((a,b)=> a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0));
+
+  let content;
+  if(!q.length){
+    content = `<div class="empty-state"><div class="es-icon">${ICONS.check}</div>
+      <p>${state.deliverScope==='today'?'Nada por entregar hoy':'Todo entregado'}</p>
+      <div class="es-sub">Aquí aparecen los pedidos con pago confirmado, listos para entregar.</div></div>`;
+  } else {
+    // agrupar por fecha
+    const groups = {};
+    q.forEach(o => { (groups[o.date] = groups[o.date] || []).push(o); });
+    content = Object.keys(groups).sort().map(dk => {
+      const dObj = new Date(dk + 'T00:00:00');
+      const lbl = dk===tk ? 'Hoy' : dObj.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'short'});
+      const totalQ = groups[dk].reduce((s,o)=>s+o.qty,0);
+      const cards = groups[dk].map(o => `
+        <div class="deliver-card">
+          <div class="deliver-top">
+            <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
+            <div class="order-info">
+              <div class="order-name">${esc(o.personName)}</div>
+              <div class="order-meta">${personTypeLabel(o)}</div>
+            </div>
+            <div class="deliver-qty-big">×${o.qty}</div>
+          </div>
+          <button class="deliver-btn" data-act="mark-delivered" data-id="${o.id}">${ICONS.check} Marcar entregado</button>
+        </div>`).join('');
+      return `<div class="date-group-label">${lbl} <span class="pill">${totalQ} granizados</span></div>${cards}`;
+    }).join('');
+  }
+
+  return `
+  <div class="day-view">
+    <div class="view-title">Cola de entrega</div>
+    <div class="deliver-toggle">
+      <div class="filter-chip ${state.deliverScope==='today'?'active':''}" data-act="deliver-scope" data-s="today">Hoy</div>
+      <div class="filter-chip ${state.deliverScope==='all'?'active':''}" data-act="deliver-scope" data-s="all">Todos</div>
+    </div>
+    ${content}
+  </div>`;
+}
+
+// ============ RENDER: LIST ============
 function renderListView(){
   const filtered = orders.filter(o => {
-    if(state.listFilter === 'pending') return !o.paid;
-    if(state.listFilter === 'paid') return o.paid;
-    return true;
-  }).slice().sort((a,b) => b.date.localeCompare(a.date));
+    const st = orderStatus(o);
+    if(state.listFilter === 'all') return true;
+    return st === state.listFilter;
+  }).slice().sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
 
-  const rows = filtered.length ? filtered.map(o => `
-    <div class="list-row" data-act="open-order" data-id="${o.id}">
-      <div class="lr-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
-      <div style="flex:1; min-width:0;">
-        <div class="lr-name">${o.personName}</div>
-        <div style="font-size:11.5px; color:#999; margin-top:1px;">${formatDateShort(o.date)} · ×${o.qty}</div>
+  const counts = {
+    all: orders.length,
+    pending: orders.filter(o=>orderStatus(o)==='pending').length,
+    ready: orders.filter(o=>orderStatus(o)==='ready').length,
+    delivered: orders.filter(o=>orderStatus(o)==='delivered').length,
+  };
+
+  const rows = filtered.length ? filtered.map(o => {
+    const st = orderStatus(o); const meta = STATUS_META[st];
+    return `
+    <div class="order-card ${st==='delivered'?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+      <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
+      <div class="order-info">
+        <div class="order-name">${esc(o.personName)}</div>
+        <div class="order-meta">${personTypeLabel(o)} · ${formatDateShort(o.date)} <span class="qty-badge">×${o.qty}</span></div>
       </div>
-      <div class="order-status ${o.paid?'paid':'pending'}" style="font-size:11px; padding:5px 10px;">${o.paid?'Pagado':'Pendiente'}</div>
-    </div>
-  `).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
+      <div class="order-right"><div class="status-chip ${st}">${meta.icon}${meta.label}</div></div>
+    </div>`;
+  }).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
+
+  const chip = (f,label) => `<div class="filter-chip ${state.listFilter===f?'active':''}" data-act="filter" data-f="${f}">${label}<br><span style="font-size:10px;opacity:.7">${counts[f]}</span></div>`;
 
   return `
-  <div class="view active" id="view-list">
-    <div class="day-view">
-      <div class="day-title" style="margin:14px 0 14px;">Todos los pedidos</div>
-      <div class="filter-row">
-        <div class="filter-chip ${state.listFilter==='all'?'active':''}" data-act="filter" data-f="all">Todos</div>
-        <div class="filter-chip ${state.listFilter==='pending'?'active':''}" data-act="filter" data-f="pending">Pendientes</div>
-        <div class="filter-chip ${state.listFilter==='paid'?'active':''}" data-act="filter" data-f="paid">Pagados</div>
-      </div>
-      ${rows}
+  <div class="day-view">
+    <div class="view-title">Todos los pedidos</div>
+    <div class="filter-row">
+      ${chip('all','Todos')}
+      ${chip('pending','Pend. pago')}
+      ${chip('ready','Por entregar')}
+      ${chip('delivered','Entregados')}
     </div>
+    ${rows}
   </div>`;
 }
-
 function formatDateShort(dk){
   const d = new Date(dk + 'T00:00:00');
   return d.toLocaleDateString('es-CO', {day:'numeric', month:'short'});
 }
 
-// ============ RENDER: STATS VIEW ============
+// ============ RENDER: STATS ============
 function renderStatsView(){
   const totalQty = orders.reduce((s,o)=>s+o.qty,0);
-  const totalPending = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0);
-  const totalPaid = orders.filter(o=>o.paid).reduce((s,o)=>s+o.qty,0);
+  const paidQty = orders.filter(o=>o.paid).reduce((s,o)=>s+o.qty,0);
+  const pendingQty = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0);
+  const deliveredQty = orders.filter(o=>o.delivered).reduce((s,o)=>s+o.qty,0);
+  const porEntregarQty = deliveryQueue().reduce((s,o)=>s+o.qty,0);
   const uniquePeople = new Set(orders.map(o=>o.personId)).size;
 
   const byPerson = {};
@@ -461,46 +652,51 @@ function renderStatsView(){
     byPerson[o.personId].qty += o.qty;
   });
   const topBuyers = Object.values(byPerson).sort((a,b)=>b.qty-a.qty).slice(0,8);
-
   const buyersHtml = topBuyers.length ? topBuyers.map(b => `
     <div class="list-row">
       <div class="lr-avatar ${b.type==='teacher'?'teacher':''}">${initials(b.name)}</div>
-      <div class="lr-name">${b.name}</div>
+      <div class="lr-name">${esc(b.name)}</div>
       <div class="lr-val">×${b.qty}</div>
-    </div>
-  `).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.stats}</div><p>Aún no hay datos</p></div>`;
+    </div>`).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.stats}</div><p>Aún no hay datos</p></div>`;
 
   return `
-  <div class="view active" id="view-stats">
-    <div class="day-view">
-      <div class="day-title" style="margin:14px 0 14px;">Resumen</div>
-      <div class="sv-grid">
-        <div class="sv-card"><div class="sv-num">${totalQty}</div><div class="sv-lbl">Total vendidos</div></div>
-        <div class="sv-card"><div class="sv-num">${uniquePeople}</div><div class="sv-lbl">Clientes distintos</div></div>
-        <div class="sv-card" style="border-color:rgba(47,125,79,0.25)"><div class="sv-num" style="color:var(--paid)">${totalPaid}</div><div class="sv-lbl">Pagados</div></div>
-        <div class="sv-card" style="border-color:rgba(194,112,26,0.25)"><div class="sv-num" style="color:var(--pending)">${totalPending}</div><div class="sv-lbl">Por cobrar</div></div>
-      </div>
-      <div class="section-label">Más pedidos</div>
-      ${buyersHtml}
+  <div class="day-view">
+    <div class="view-title">Resumen</div>
+    <div class="section-label" style="margin-top:6px;">Dinero</div>
+    <div class="sv-grid">
+      <div class="sv-card" style="border-color:rgba(47,125,79,0.25)"><div class="sv-num money" style="color:var(--delivered)">${formatCOP(paidQty*UNIT_PRICE)}</div><div class="sv-lbl">Recaudado (pagado)</div></div>
+      <div class="sv-card" style="border-color:rgba(194,112,26,0.25)"><div class="sv-num money" style="color:var(--pending)">${formatCOP(pendingQty*UNIT_PRICE)}</div><div class="sv-lbl">Por cobrar</div></div>
     </div>
+    <div class="section-label">Granizados</div>
+    <div class="sv-grid">
+      <div class="sv-card"><div class="sv-num">${totalQty}</div><div class="sv-lbl">Total pedidos</div></div>
+      <div class="sv-card"><div class="sv-num">${uniquePeople}</div><div class="sv-lbl">Clientes distintos</div></div>
+      <div class="sv-card" style="border-color:rgba(33,93,156,0.22)"><div class="sv-num" style="color:var(--ready)">${porEntregarQty}</div><div class="sv-lbl">Por entregar</div></div>
+      <div class="sv-card" style="border-color:rgba(47,125,79,0.22)"><div class="sv-num" style="color:var(--delivered)">${deliveredQty}</div><div class="sv-lbl">Entregados</div></div>
+    </div>
+    <div class="section-label">Quién pide más</div>
+    ${buyersHtml}
+    <div style="text-align:center; font-size:11px; color:#aab0b8; margin-top:18px;">Precio unitario: ${formatCOP(UNIT_PRICE)} · edítalo en firebase-config.js</div>
   </div>`;
 }
 
 // ============ RENDER: BOTTOM NAV ============
 function renderBottomNav(){
+  const porEntregar = deliveryQueue().length;
   const tabs = [
     {id:'calendar', icon:ICONS.calendar, label:'Calendario'},
-    {id:'list', icon:ICONS.list, label:'Pedidos'},
-    {id:'stats', icon:ICONS.stats, label:'Resumen'},
+    {id:'deliver',  icon:ICONS.truck,    label:'Entregar', badge: porEntregar},
+    {id:'list',     icon:ICONS.list,     label:'Pedidos'},
+    {id:'stats',    icon:ICONS.stats,    label:'Resumen'},
   ];
   return `
   <div class="bottom-nav">
     ${tabs.map(t => `
       <button class="nav-item ${state.view===t.id || (state.view==='day' && t.id==='calendar') ? 'active':''}" data-act="nav" data-view="${t.id}">
         ${t.icon}
+        ${t.badge ? `<span class="nav-badge">${t.badge}</span>` : ''}
         <span>${t.label}</span>
-      </button>
-    `).join('')}
+      </button>`).join('')}
   </div>`;
 }
 
@@ -509,11 +705,13 @@ function render(){
   let body = '';
   if(state.view === 'calendar') body = renderCalendar();
   else if(state.view === 'day') body = renderDayView();
+  else if(state.view === 'deliver') body = renderDeliverView();
   else if(state.view === 'list') body = renderListView();
   else if(state.view === 'stats') body = renderStatsView();
 
   const showTopbar = state.view === 'calendar';
   app.innerHTML = `
+    ${renderSyncBanner()}
     ${showTopbar ? renderTopbar() : ''}
     ${body}
     ${renderBottomNav()}
@@ -522,41 +720,33 @@ function render(){
   attachEvents();
 }
 
-// ============ MODAL: NEW ORDER FLOW ============
+// ============ MODAL: NEW ORDER ============
 function openNewOrderModal(){
-  state.modal = {
-    type: 'new-order',
-    step: 1,
-    data: { personType: 'student', grade: '1st', personId: null, personName: null, qty: 1, paid: false, search: '' }
-  };
+  state.modal = { type:'new-order', step:1,
+    data:{ personType:'student', grade:'1st', personId:null, personName:null, qty:1, paid:false, search:'' } };
   render();
 }
-
-function openOrderActions(orderId){
-  state.modal = { type: 'order-actions', orderId };
-  render();
-}
-
+function openOrderActions(orderId){ state.modal = { type:'order-actions', orderId }; render(); }
+function openConfirmDelete(orderId){ state.modal = { type:'confirm-delete', orderId }; render(); }
 function closeModal(){ state.modal = null; render(); }
 
 function renderModal(){
   let overlay = document.getElementById('modal-overlay');
-  if(!state.modal){
-    if(overlay) overlay.remove();
-    return;
-  }
-  const html = state.modal.type === 'new-order' ? renderNewOrderSheet() : renderOrderActionsSheet();
+  if(!state.modal){ if(overlay) overlay.remove(); return; }
+  let html = '';
+  if(state.modal.type === 'new-order') html = renderNewOrderSheet();
+  else if(state.modal.type === 'order-actions') html = renderOrderActionsSheet();
+  else if(state.modal.type === 'confirm-delete') html = renderConfirmDeleteSheet();
+
   if(!overlay){
     overlay = document.createElement('div');
-    overlay.id = 'modal-overlay';
-    overlay.className = 'modal-overlay';
+    overlay.id = 'modal-overlay'; overlay.className = 'modal-overlay';
     document.body.appendChild(overlay);
   }
   overlay.innerHTML = html;
   requestAnimationFrame(()=> overlay.classList.add('show'));
   overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
 
-  // Re-attach listeners every time the modal content changes
   overlay.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', handleAction));
   const searchInput = overlay.querySelector('#person-search');
   if(searchInput){
@@ -574,9 +764,7 @@ function renderModal(){
 function renderNewOrderSheet(){
   const d = state.modal.data;
   const step = state.modal.step;
-
-  let stepContent = '';
-  let title = '';
+  let stepContent = '', title = '';
 
   if(step === 1){
     title = '¿Quién pide?';
@@ -589,57 +777,49 @@ function renderNewOrderSheet(){
       ${isStudent ? `
         <div class="tab-row">
           ${GRADES.map(g => `<div class="tab-chip ${d.grade===g?'active':''}" data-act="set-grade" data-grade="${g}">${GRADE_LABELS[g]} grado</div>`).join('')}
-        </div>
-      `: ''}
-      <input type="text" class="search-input" id="person-search" placeholder="Buscar nombre..." value="${d.search}">
-      <div class="person-grid" id="person-grid">
-        ${renderPersonGrid()}
-      </div>
-    `;
+        </div>` : ''}
+      <input type="text" class="search-input" id="person-search" placeholder="Buscar nombre o apellido..." value="${esc(d.search)}" autocomplete="off">
+      <div class="person-grid" id="person-grid">${renderPersonGrid()}</div>`;
   } else if(step === 2){
     title = 'Cantidad';
     stepContent = `
       <div style="text-align:center; margin-bottom:6px;">
-        <div class="person-avatar-lg" style="${d.personType==='teacher'?'background:var(--red)':''}">${initials(d.personName)}</div>
-        <div style="font-weight:700; font-size:16px;">${d.personName}</div>
-        <div style="font-size:12px; color:#999; margin-top:2px;">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</div>
+        <div class="person-avatar-lg" style="${d.personType==='teacher'?'background:var(--red);color:#fff':''}">${initials(d.personName)}</div>
+        <div style="font-weight:800; font-size:17px;">${esc(d.personName)}</div>
+        <div style="font-size:12.5px; color:#8a8f98; margin-top:2px;">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</div>
       </div>
       <div class="qty-stepper">
         <button class="qty-btn minus" data-act="qty-dec">−</button>
         <div class="qty-display">${d.qty}</div>
         <button class="qty-btn" data-act="qty-inc">+</button>
       </div>
+      <div class="qty-sub">${formatCOP(d.qty*UNIT_PRICE)} en total</div>
       <div class="quick-qty-row">
         ${[1,2,3,4,5].map(n => `<div class="quick-qty-btn ${d.qty===n?'active':''}" data-act="qty-set" data-n="${n}">${n}</div>`).join('')}
-      </div>
-    `;
+      </div>`;
   } else if(step === 3){
     title = 'Confirmar';
     stepContent = `
       <div class="confirm-summary">
-        <div class="confirm-row"><span class="k">Cliente</span><span class="v">${d.personName}</span></div>
-        <div class="confirm-row"><span class="k">Tipo</span><span class="v">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</span></div>
+        <div class="confirm-row"><span class="k">Cliente</span><span class="v">${esc(d.personName)}</span></div>
+        <div class="confirm-row"><span class="k">Curso</span><span class="v">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</span></div>
         <div class="confirm-divider"></div>
         <div class="confirm-row"><span class="k">Cantidad</span><span class="v">${d.qty} granizado${d.qty>1?'s':''}</span></div>
-        <div class="confirm-divider"></div>
         <div class="confirm-row"><span class="k">Fecha</span><span class="v">${formatDateShort(state.selectedDate)}</span></div>
+        <div class="confirm-divider"></div>
+        <div class="confirm-row"><span class="k">Total</span><span class="v total">${formatCOP(d.qty*UNIT_PRICE)}</span></div>
       </div>
-      <div class="section-label" style="margin-top:0;">Estado de pago</div>
+      <div class="section-label" style="margin-top:0;">¿Ya envió el soporte de pago?</div>
       <div class="payment-toggle">
-        <div class="pay-option pending-opt ${!d.paid?'active':''}" data-act="set-paid" data-val="false">
-          ${ICONS.clock}
-          <span>Pendiente</span>
-        </div>
-        <div class="pay-option paid-opt ${d.paid?'active':''}" data-act="set-paid" data-val="true">
-          ${ICONS.check}
-          <span>Ya pagó</span>
-        </div>
+        <div class="pay-option pending-opt ${!d.paid?'active':''}" data-act="set-paid" data-val="false">${ICONS.clock}<span>Aún no</span></div>
+        <div class="pay-option paid-opt ${d.paid?'active':''}" data-act="set-paid" data-val="true">${ICONS.check}<span>Pago confirmado</span></div>
       </div>
-    `;
+      <div class="pay-hint">${d.paid
+        ? 'Pasará directo a la cola de entrega.'
+        : 'Quedará como “pendiente de pago”. Cuando la asistente confirme el soporte, cámbialo a pagado y aparecerá para entregar.'}</div>`;
   }
 
   const canAdvance = (step===1 && d.personId) || step===2 || step===3;
-
   return `
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
@@ -653,11 +833,9 @@ function renderNewOrderSheet(){
     <div class="sheet-body">
       ${stepContent}
       <div style="height:8px"></div>
-      ${step < 3 ? `
-        <button class="primary-btn" data-act="next-step" ${!canAdvance?'disabled':''}>Continuar</button>
-      ` : `
-        <button class="primary-btn" data-act="save-order">${ICONS.check} Guardar pedido</button>
-      `}
+      ${step < 3
+        ? `<button class="primary-btn" data-act="next-step" ${!canAdvance?'disabled':''}>Continuar</button>`
+        : `<button class="primary-btn green" data-act="save-order">${ICONS.check} Guardar pedido</button>`}
       ${step > 1 ? `<button class="secondary-btn" data-act="prev-step">Atrás</button>` : ''}
     </div>
   </div>`;
@@ -665,30 +843,39 @@ function renderNewOrderSheet(){
 
 function renderPersonGrid(){
   const d = state.modal.data;
-  let pool = [];
-  if(d.personType === 'student'){
-    pool = (NAS_DATA.students[d.grade] || []).map(s => ({id:s.id, name:s.name, type:'student'}));
-  } else {
-    pool = NAS_DATA.teachers.map(t => ({id:t.id, name:t.name, type:'teacher'}));
-  }
+  let pool = d.personType === 'student'
+    ? (NAS_DATA.students[d.grade] || []).map(s => ({id:s.id, name:s.name, type:'student'}))
+    : NAS_DATA.teachers.map(t => ({id:t.id, name:t.name, type:'teacher'}));
   const search = (d.search||'').toLowerCase().trim();
-  if(search){
-    pool = pool.filter(p => p.name.toLowerCase().includes(search));
-  }
-  if(!pool.length){
-    return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados</p></div>`;
-  }
+  if(search) pool = pool.filter(p => p.name.toLowerCase().includes(search));
+  if(!pool.length) return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados</p></div>`;
   return pool.map(p => `
-    <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${p.name}" data-ptype="${p.type}">
+    <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${esc(p.name)}" data-ptype="${p.type}">
       <div class="person-avatar">${initials(p.name)}</div>
-      <div class="person-name">${p.name}</div>
-    </div>
-  `).join('');
+      <div class="person-name">${esc(p.name)}</div>
+    </div>`).join('');
+}
+
+function statusTrackHtml(o){
+  const st = orderStatus(o);
+  const steps = [
+    {key:'pending', lbl:'Registrado'},
+    {key:'ready',   lbl:'Pagado'},
+    {key:'delivered', lbl:'Entregado'},
+  ];
+  const idx = {pending:0, ready:1, delivered:2}[st];
+  return `<div class="status-track">${steps.map((s,i)=>`
+    <div class="track-step ${i<idx?'done':''} ${i===idx?'current':''}">
+      ${i>0?'<div class="track-line"></div>':''}
+      <div class="track-dot">${i<idx?ICONS.check:(i+1)}</div>
+      <div class="track-lbl">${s.lbl}</div>
+    </div>`).join('')}</div>`;
 }
 
 function renderOrderActionsSheet(){
   const o = orders.find(x => x.id === state.modal.orderId);
-  if(!o) return '';
+  if(!o){ return `<div class="sheet"><div class="sheet-body"><div class="empty-state"><p>Pedido no encontrado</p></div></div></div>`; }
+  const st = orderStatus(o);
   return `
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
@@ -698,171 +885,161 @@ function renderOrderActionsSheet(){
     </div>
     <div class="sheet-body">
       <div style="text-align:center;">
-        <div class="person-avatar-lg" style="${o.personType==='teacher'?'background:var(--red)':''}">${initials(o.personName)}</div>
-        <div style="font-weight:700; font-size:17px;">${o.personName}</div>
-        <div style="font-size:12.5px; color:#999; margin-top:2px;">${o.personType==='teacher'?'Docente':GRADE_LABELS[o.grade]+' grado'} · ${o.qty} granizado${o.qty>1?'s':''}</div>
+        <div class="person-avatar-lg" style="${o.personType==='teacher'?'background:var(--red);color:#fff':''}">${initials(o.personName)}</div>
+        <div style="font-weight:800; font-size:18px;">${esc(o.personName)}</div>
+        <div style="font-size:12.5px; color:#8a8f98; margin-top:3px;">${personTypeLabel(o)} · ${formatDateShort(o.date)} · ${formatCOP(o.qty*UNIT_PRICE)}</div>
       </div>
-      <div style="height:18px"></div>
+      ${statusTrackHtml(o)}
+      <div style="height:14px"></div>
       <div class="action-list">
-        <button class="action-item" data-act="toggle-paid" data-id="${o.id}">
-          ${o.paid ? ICONS.clock : ICONS.check}
-          <span>${o.paid ? 'Marcar como pendiente' : 'Marcar como pagado'}</span>
-        </button>
-        <button class="action-item danger" data-act="delete-order" data-id="${o.id}">
-          ${ICONS.trash}
-          <span>Eliminar pedido</span>
+        <div class="action-item">
+          ${ICONS.cone}<span>Cantidad</span>
+          <div class="mini-stepper">
+            <button data-act="edit-qty" data-id="${o.id}" data-delta="-1">−</button>
+            <span class="mv">${o.qty}</span>
+            <button data-act="edit-qty" data-id="${o.id}" data-delta="1">+</button>
+          </div>
+        </div>
+        ${!o.delivered ? `
+          <button class="action-item ${o.paid?'':'green'}" data-act="toggle-paid" data-id="${o.id}">
+            ${o.paid ? ICONS.undo : ICONS.money}
+            <span>${o.paid ? 'Quitar pago (volver a pendiente)' : 'Confirmar pago'}</span>
+          </button>` : ''}
+        ${o.paid ? `
+          <button class="action-item ${o.delivered?'':'green'}" data-act="${o.delivered?'undo-delivered':'mark-delivered'}" data-id="${o.id}">
+            ${o.delivered ? ICONS.undo : ICONS.check}
+            <span>${o.delivered ? 'Deshacer entrega' : 'Marcar como entregado'}</span>
+          </button>` : ''}
+        <button class="action-item danger" data-act="ask-delete" data-id="${o.id}">
+          ${ICONS.trash}<span>Eliminar pedido</span>
         </button>
       </div>
     </div>
   </div>`;
 }
 
-// ============ TOAST ============
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 1800);
+function renderConfirmDeleteSheet(){
+  const o = orders.find(x => x.id === state.modal.orderId);
+  const name = o ? esc(o.personName) : 'este pedido';
+  return `
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Eliminar pedido</div>
+      <button class="sheet-close" data-act="close-modal">${ICONS.close}</button>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:14.5px; color:#555; text-align:center; margin:6px 0 18px;">¿Seguro que quieres eliminar el pedido de <b>${name}</b>? Esta acción no se puede deshacer.</p>
+      <button class="primary-btn danger" data-act="confirm-delete" data-id="${state.modal.orderId}">${ICONS.trash} Sí, eliminar</button>
+      <button class="secondary-btn" data-act="close-modal">Cancelar</button>
+    </div>
+  </div>`;
 }
 
-// ============ EVENT HANDLING ============
+// ============ TOAST ============
+function showToast(msg, icon){
+  const t = document.getElementById('toast');
+  t.innerHTML = (icon || '') + '<span>' + esc(msg) + '</span>';
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 1900);
+}
+
+// ============ EVENTS ============
 function attachEvents(){
-  // Modal listeners are attached inside renderModal() itself, so this only
-  // needs to wire up the main app view (calendar/day/list/stats).
-  app.querySelectorAll('[data-act]').forEach(el => {
-    el.addEventListener('click', handleAction);
-  });
+  app.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', handleAction));
 }
 
 function handleAction(e){
   const el = e.currentTarget;
   const act = el.dataset.act;
 
-  if(act === 'nav'){
-    state.view = el.dataset.view;
-    render();
-  }
-  else if(act === 'prev-month'){
-    state.calMonth--;
-    if(state.calMonth < 0){ state.calMonth = 11; state.calYear--; }
-    render();
-  }
-  else if(act === 'next-month'){
-    state.calMonth++;
-    if(state.calMonth > 11){ state.calMonth = 0; state.calYear++; }
-    render();
-  }
-  else if(act === 'back-to-cal'){
-    state.view = 'calendar';
-    render();
-  }
-  else if(act === 'new-order'){
-    openNewOrderModal();
-  }
-  else if(act === 'close-modal'){
-    closeModal();
-  }
-  else if(act === 'filter'){
-    state.listFilter = el.dataset.f;
-    render();
-  }
-  else if(act === 'open-order'){
-    openOrderActions(el.dataset.id);
-  }
+  if(act === 'nav'){ state.view = el.dataset.view; render(); }
+  else if(act === 'prev-month'){ state.calMonth--; if(state.calMonth<0){state.calMonth=11; state.calYear--;} render(); }
+  else if(act === 'next-month'){ state.calMonth++; if(state.calMonth>11){state.calMonth=0; state.calYear++;} render(); }
+  else if(act === 'back-to-cal'){ state.view = 'calendar'; render(); }
+  else if(act === 'new-order'){ openNewOrderModal(); }
+  else if(act === 'close-modal'){ closeModal(); }
+  else if(act === 'filter'){ state.listFilter = el.dataset.f; render(); }
+  else if(act === 'deliver-scope'){ state.deliverScope = el.dataset.s; render(); }
+  else if(act === 'open-order'){ openOrderActions(el.dataset.id); }
+  else if(act === 'ask-delete'){ openConfirmDelete(el.dataset.id); }
+  else if(act === 'confirm-delete'){ deleteOrderById(el.dataset.id); closeModal(); showToast('Pedido eliminado', ICONS.trash); }
+
   else if(act === 'toggle-paid'){
-    const o = orders.find(x => x.id === el.dataset.id);
-    if(o){ o.paid = !o.paid; saveOrders(); }
-    closeModal();
-    showToast(o && o.paid ? 'Marcado como pagado ✓' : 'Marcado como pendiente');
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
+    if(!o.paid) { o.delivered = false; o.deliveredAt = null; }
+    upsertOrder(o); closeModal();
+    showToast(o.paid ? 'Pago confirmado' : 'Marcado como pendiente', o.paid?ICONS.money:ICONS.clock);
   }
-  else if(act === 'delete-order'){
-    orders = orders.filter(x => x.id !== el.dataset.id);
-    saveOrders();
-    closeModal();
-    showToast('Pedido eliminado');
+  else if(act === 'mark-delivered'){
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.delivered = true; o.deliveredAt = Date.now();
+    if(!o.paid){ o.paid = true; o.paidAt = o.paidAt || Date.now(); }
+    upsertOrder(o); closeModal();
+    showToast('¡Entregado! ✓', ICONS.check);
   }
+  else if(act === 'undo-delivered'){
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.delivered = false; o.deliveredAt = null;
+    upsertOrder(o); closeModal(); showToast('Entrega deshecha', ICONS.undo);
+  }
+  else if(act === 'edit-qty'){
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    const delta = parseInt(el.dataset.delta, 10);
+    o.qty = Math.max(1, Math.min(99, o.qty + delta));
+    upsertOrder(o); // vuelve a renderizar; reabrimos la hoja para reflejar el cambio
+    openOrderActions(o.id);
+  }
+
+  // ---- new-order flow ----
   else if(act === 'set-persontype'){
-    state.modal.data.personType = el.dataset.type;
-    state.modal.data.personId = null;
-    state.modal.data.personName = null;
-    state.modal.data.search = '';
-    renderModal();
+    const d = state.modal.data; d.personType = el.dataset.type; d.personId=null; d.personName=null; d.search=''; renderModal();
   }
   else if(act === 'set-grade'){
-    state.modal.data.grade = el.dataset.grade;
-    state.modal.data.personId = null;
-    state.modal.data.personName = null;
-    renderModal();
+    const d = state.modal.data; d.grade = el.dataset.grade; d.personId=null; d.personName=null; renderModal();
   }
   else if(act === 'select-person'){
-    state.modal.data.personId = el.dataset.id;
-    state.modal.data.personName = el.dataset.name;
-    state.modal.data.personType = el.dataset.ptype;
-    renderModal();
+    const d = state.modal.data; d.personId = el.dataset.id; d.personName = el.dataset.name; d.personType = el.dataset.ptype; renderModal();
   }
-  else if(act === 'qty-inc'){
-    state.modal.data.qty = Math.min(99, state.modal.data.qty + 1);
-    renderModal();
-  }
-  else if(act === 'qty-dec'){
-    state.modal.data.qty = Math.max(1, state.modal.data.qty - 1);
-    renderModal();
-  }
-  else if(act === 'qty-set'){
-    state.modal.data.qty = parseInt(el.dataset.n, 10);
-    renderModal();
-  }
-  else if(act === 'set-paid'){
-    state.modal.data.paid = el.dataset.val === 'true';
-    renderModal();
-  }
+  else if(act === 'qty-inc'){ state.modal.data.qty = Math.min(99, state.modal.data.qty+1); renderModal(); }
+  else if(act === 'qty-dec'){ state.modal.data.qty = Math.max(1, state.modal.data.qty-1); renderModal(); }
+  else if(act === 'qty-set'){ state.modal.data.qty = parseInt(el.dataset.n,10); renderModal(); }
+  else if(act === 'set-paid'){ state.modal.data.paid = el.dataset.val === 'true'; renderModal(); }
   else if(act === 'next-step'){
-    if(state.modal.step === 1 && !state.modal.data.personId) return;
-    state.modal.step++;
-    renderModal();
+    if(state.modal.step===1 && !state.modal.data.personId) return;
+    state.modal.step++; renderModal();
   }
-  else if(act === 'prev-step'){
-    state.modal.step--;
-    renderModal();
-  }
+  else if(act === 'prev-step'){ state.modal.step--; renderModal(); }
   else if(act === 'save-order'){
     const d = state.modal.data;
-    orders.push({
-      id: uid(),
-      date: state.selectedDate,
-      personId: d.personId,
-      personName: d.personName,
-      personType: d.personType,
+    const now = Date.now();
+    upsertOrder({
+      id: uid(), date: state.selectedDate,
+      personId: d.personId, personName: d.personName, personType: d.personType,
       grade: d.personType === 'student' ? d.grade : null,
-      qty: d.qty,
-      paid: d.paid,
-      createdAt: Date.now()
+      qty: d.qty, paid: !!d.paid, paidAt: d.paid ? now : null,
+      delivered: false, deliveredAt: null, createdAt: now,
     });
-    saveOrders();
     closeModal();
-    showToast('Pedido guardado ✓');
-    render();
+    showToast('Pedido guardado', ICONS.check);
   }
 }
 
-// calendar day click delegation
+// calendar day click (delegated once on persistent #app)
 app.addEventListener('click', (e) => {
   const dayEl = e.target.closest('.cal-day[data-date]');
-  if(dayEl){
-    state.selectedDate = dayEl.dataset.date;
-    state.view = 'day';
-    render();
-  }
+  if(dayEl){ state.selectedDate = dayEl.dataset.date; state.view = 'day'; render(); }
 });
 
 // ============ INIT ============
+loadLocal();
 render();
+initCloud();
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
 </body>

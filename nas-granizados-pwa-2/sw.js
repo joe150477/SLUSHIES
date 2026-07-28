@@ -1,8 +1,18 @@
-const CACHE = 'nas-sushi-v1';
-const ASSETS = ['./index.html', './data.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './crest.png'];
+const CACHE = 'nas-granizados-v2';
+const ASSETS = [
+  './index.html', './data.js', './firebase-config.js', './manifest.json',
+  './icons/icon-192.png', './icons/icon-512.png', './crest.png',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
+];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      // Cachea uno por uno para que un fallo (ej. sin internet) no rompa la instalación.
+      Promise.all(ASSETS.map((url) => c.add(url).catch(() => null)))
+    )
+  );
   self.skipWaiting();
 });
 
@@ -14,7 +24,21 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return; // deja pasar las escrituras a Firebase
+  // No interceptamos el tráfico de la base de datos (tiempo real).
+  if (req.url.includes('firebaseio.com') || req.url.includes('google.com/')) return;
+
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    caches.match(req).then((cached) =>
+      cached || fetch(req).then((res) => {
+        // Guarda en caché copias de recursos GET válidos (app shell + SDK).
+        if (res && res.status === 200 && (req.url.startsWith(self.location.origin) || req.url.includes('gstatic.com'))) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => cached)
+    )
   );
 });

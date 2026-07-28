@@ -1,7 +1,7 @@
 {
   "name": "NAS Granizados",
   "short_name": "NAS Granizados",
-  "description": "Control de pedidos de granizados - New Academy School",
+  "description": "Pedidos y entrega de granizados - New Academy School",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0e2a52",
