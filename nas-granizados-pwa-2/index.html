@@ -257,6 +257,26 @@ body{
 
 @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .rocket-anim{animation:floatY 3s ease-in-out infinite;}
+
+/* ---- Lock / PIN screen ---- */
+.lock{position:fixed; inset:0; z-index:3000; background:linear-gradient(180deg,var(--navy) 0%, var(--navy-deep) 100%); color:var(--cream);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px max(24px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));}
+.lock .crest-badge{width:82px;height:82px;border-radius:22px; padding:9px; margin-bottom:20px; box-shadow:0 8px 22px rgba(0,0,0,0.35);}
+.lock h2{font-size:21px; font-weight:800; margin:0;}
+.lock .lk-sub{font-size:13px; opacity:0.6; margin:7px 0 30px;}
+.pin-dots{display:flex; gap:16px; margin-bottom:34px; height:16px;}
+.pin-dot{width:15px;height:15px;border-radius:50%; border:2px solid rgba(255,255,255,0.38); transition:all 0.12s;}
+.pin-dot.filled{background:var(--gold-light); border-color:var(--gold-light); transform:scale(1.05);}
+.lock.error .pin-dots{animation:shake 0.4s;}
+.lock.error .pin-dot{border-color:#e8908f;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.keypad{display:grid; grid-template-columns:repeat(3,74px); gap:16px;}
+.key{width:74px;height:74px;border-radius:50%; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:#fff; font-size:27px; font-weight:600; display:flex; align-items:center; justify-content:center; user-select:none;}
+.key:active{background:rgba(255,255,255,0.22); transform:scale(0.95);}
+.key.blank{background:none; border:none; pointer-events:none;}
+.key.del{font-size:22px;}
+.key.del svg{width:26px;height:26px;}
+.lk-err{font-size:12.5px; color:#f0b4b3; font-weight:700; height:16px; margin-top:20px;}
 </style>
 </head>
 <body>
@@ -286,6 +306,7 @@ const ICONS = {
   undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v1"/></svg>',
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18a4 4 0 010-8 6 6 0 0111.5-1.5A4.5 4.5 0 0118 18z"/></svg>',
   warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  backspace: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 5H8L2 12l6 7h14z"/><path d="M15 9l-4 6M11 9l4 6"/></svg>',
 };
 
 // ============ STATE & PERSISTENCE ============
@@ -1033,14 +1054,67 @@ app.addEventListener('click', (e) => {
   if(dayEl){ state.selectedDate = dayEl.dataset.date; state.view = 'day'; render(); }
 });
 
+// ============ LOCK / PIN ============
+const PIN_KEY = 'nas_granizados_pin_ok';
+function pinEnabled(){ return typeof APP_PIN !== 'undefined' && APP_PIN !== null && String(APP_PIN).length > 0; }
+function isUnlocked(){ return !pinEnabled() || localStorage.getItem(PIN_KEY) === String(APP_PIN); }
+
+let _pinBuf = '';
+function renderLock(){
+  const len = String(APP_PIN).length;
+  const dots = Array.from({length:len}, (_,i)=>`<div class="pin-dot" data-i="${i}"></div>`).join('');
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','del'].map(k => {
+    if(k==='') return `<div class="key blank"></div>`;
+    if(k==='del') return `<button class="key del" data-key="del" aria-label="Borrar">${ICONS.backspace}</button>`;
+    return `<button class="key" data-key="${k}">${k}</button>`;
+  }).join('');
+  const lock = document.createElement('div');
+  lock.className = 'lock'; lock.id = 'lock';
+  lock.innerHTML = `
+    <div class="crest-badge"><img src="crest.png" alt="NAS" onerror="this.parentElement.style.display='none'"></div>
+    <h2>NAS Granizados</h2>
+    <div class="lk-sub">Ingresa el PIN para continuar</div>
+    <div class="pin-dots">${dots}</div>
+    <div class="keypad">${keys}</div>
+    <div class="lk-err" id="lk-err"></div>`;
+  document.body.appendChild(lock);
+  lock.querySelectorAll('[data-key]').forEach(b => b.addEventListener('click', () => pinPress(b.dataset.key)));
+}
+function pinUpdateDots(){
+  document.querySelectorAll('#lock .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < _pinBuf.length));
+}
+function pinPress(k){
+  const lock = document.getElementById('lock'); if(!lock) return;
+  document.getElementById('lk-err').textContent = '';
+  if(k === 'del'){ _pinBuf = _pinBuf.slice(0,-1); pinUpdateDots(); return; }
+  if(_pinBuf.length >= String(APP_PIN).length) return;
+  _pinBuf += k; pinUpdateDots();
+  if(_pinBuf.length === String(APP_PIN).length){
+    if(_pinBuf === String(APP_PIN)){
+      localStorage.setItem(PIN_KEY, String(APP_PIN));
+      lock.style.transition = 'opacity 0.25s'; lock.style.opacity = '0';
+      setTimeout(() => { lock.remove(); boot(); }, 250);
+    } else {
+      lock.classList.add('error');
+      document.getElementById('lk-err').textContent = 'PIN incorrecto, intenta de nuevo';
+      setTimeout(() => { lock.classList.remove('error'); _pinBuf = ''; pinUpdateDots(); }, 450);
+    }
+  }
+}
+
 // ============ INIT ============
 loadLocal();
-render();
-initCloud();
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+function boot(){
+  render();
+  initCloud();
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
 }
+
+if(isUnlocked()) boot();
+else renderLock();
 </script>
 </body>
 </html>

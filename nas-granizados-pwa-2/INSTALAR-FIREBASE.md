@@ -84,3 +84,17 @@ adelante quieres cerrarlo con usuario/clave, se puede añadir login de Firebase 
 ## Cambiar el precio del granizado
 
 Está en **`firebase-config.js`**, al final: `const UNIT_PRICE = 2000;` (pesos).
+
+## PIN de acceso
+
+La app pide un **PIN** al abrir (candado simple para que un curioso con el link no
+entre; no es seguridad de datos). Se configura en **`firebase-config.js`**:
+
+```js
+const APP_PIN = "1234";   // cámbialo por el de ustedes (4 a 6 dígitos)
+```
+
+- Cada celular pide el PIN **una sola vez** y lo recuerda; no lo vuelve a pedir.
+- Si **cambias el PIN** en el código, todos deben volver a ingresarlo.
+- Si lo dejas **vacío** (`const APP_PIN = "";`), la app abre sin pedir PIN.
+
