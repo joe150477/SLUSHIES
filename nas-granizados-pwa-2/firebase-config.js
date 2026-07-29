@@ -37,4 +37,4 @@ const UNIT_PRICE = 2000;
 // PIN para entrar a la app (candado de acceso, no seguridad real).
 // Cámbialo por el que quieran usar tú y la asistente. Puede ser de 4 a 6 dígitos.
 // Si lo dejas vacío ("") la app abre sin pedir PIN.
-const APP_PIN = "1234";
+const APP_PIN = "1987";
