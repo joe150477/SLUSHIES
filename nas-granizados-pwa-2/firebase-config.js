@@ -22,13 +22,13 @@
    ============================================================ */
 
 const FIREBASE_CONFIG = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyDj2mtc5DzKPe7wFdpQiWa5b-Qwnv410dA",
+  authDomain: "nas-granizados.firebaseapp.com",
+  databaseURL: "https://nas-granizados-default-rtdb.firebaseio.com",
+  projectId: "nas-granizados",
+  storageBucket: "nas-granizados.firebasestorage.app",
+  messagingSenderId: "875515899704",
+  appId: "1:875515899704:web:9e0108130fc3f90ccc9bcd"
 };
 
 // Precio de un granizado (en pesos). Cámbialo si sube el precio.
