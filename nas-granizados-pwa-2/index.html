@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0e2a52">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 :root{
   --navy:#0e2a52; --navy-deep:#081a36; --navy-light:#1c3f74;
@@ -46,9 +46,8 @@ body{
   background: radial-gradient(circle, rgba(200,162,74,0.20), transparent 70%); border-radius:50%; }
 .topbar-row{display:flex; align-items:center; justify-content:space-between; gap:12px; position:relative;}
 .brand{display:flex; align-items:center; gap:12px;}
-.crest-badge{width:46px;height:46px;border-radius:14px; background:var(--cream); flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.28);}
-.crest-badge img{width:100%; height:100%; object-fit:contain; display:block;}
+.brand-logo{width:54px;height:54px; object-fit:contain; flex-shrink:0; display:block;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,0.32));}
 .brand-text h1{font-size:19px; font-weight:800; margin:0; letter-spacing:0.2px;}
 .brand-text p{font-size:11px; margin:2px 0 0; opacity:0.62; letter-spacing:0.3px;}
 .sync-pill{display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
@@ -261,7 +260,7 @@ body{
 /* ---- Lock / PIN screen ---- */
 .lock{position:fixed; inset:0; z-index:3000; background:linear-gradient(180deg,var(--navy) 0%, var(--navy-deep) 100%); color:var(--cream);
   display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px max(24px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));}
-.lock .crest-badge{width:82px;height:82px;border-radius:22px; padding:9px; margin-bottom:20px; box-shadow:0 8px 22px rgba(0,0,0,0.35);}
+.lock-logo{width:134px;height:134px; object-fit:contain; margin-bottom:22px; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.42));}
 .lock h2{font-size:21px; font-weight:800; margin:0;}
 .lock .lk-sub{font-size:13px; opacity:0.6; margin:7px 0 30px;}
 .pin-dots{display:flex; gap:16px; margin-bottom:34px; height:16px;}
@@ -447,7 +446,7 @@ function renderTopbar(){
   <div class="topbar">
     <div class="topbar-row">
       <div class="brand">
-        <div class="crest-badge"><img src="crest.png" class="rocket-anim" alt="NAS" onerror="this.parentElement.style.display='none'"></div>
+        <img src="logo.png" class="brand-logo rocket-anim" alt="NAS" onerror="this.style.display='none'">
         <div class="brand-text">
           <h1>NAS Granizados</h1>
           <p>New Academy School</p>
@@ -1071,7 +1070,7 @@ function renderLock(){
   const lock = document.createElement('div');
   lock.className = 'lock'; lock.id = 'lock';
   lock.innerHTML = `
-    <div class="crest-badge"><img src="crest.png" alt="NAS" onerror="this.parentElement.style.display='none'"></div>
+    <img src="logo.png" class="lock-logo" alt="NAS" onerror="this.style.display='none'">
     <h2>NAS Granizados</h2>
     <div class="lk-sub">Ingresa el PIN para continuar</div>
     <div class="pin-dots">${dots}</div>

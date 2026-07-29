@@ -1,7 +1,7 @@
-const CACHE = 'nas-granizados-v3';
+const CACHE = 'nas-granizados-v4';
 const ASSETS = [
   './index.html', './data.js', './firebase-config.js', './manifest.json',
-  './icons/icon-192.png', './icons/icon-512.png', './crest.png',
+  './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
 ];
