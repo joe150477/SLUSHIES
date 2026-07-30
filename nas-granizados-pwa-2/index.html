@@ -118,6 +118,14 @@ body{
 .status-chip.ready{background:var(--ready-bg); color:var(--ready);}
 .status-chip.delivered{background:var(--delivered-bg); color:var(--delivered);}
 
+/* chips de estado (pago + entrega, independientes) */
+.chip{display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:10px; font-size:11px; font-weight:800; white-space:nowrap;}
+.chip svg{width:12px;height:12px;}
+.chip-paid{background:var(--delivered-bg); color:var(--delivered);}
+.chip-debe{background:var(--pending-bg); color:var(--pending);}
+.chip-entregado{background:var(--ready-bg); color:var(--ready);}
+.chip-porentregar{background:rgba(14,42,82,0.06); color:var(--navy-light);}
+
 /* ---- Delivery queue ---- */
 .deliver-toggle{display:flex; gap:8px; margin:2px 0 16px;}
 .deliver-toggle .filter-chip{flex:1;}
@@ -130,6 +138,21 @@ body{
 .deliver-btn:active{transform:scale(0.98);}
 .date-group-label{font-size:12.5px; font-weight:800; color:var(--navy); text-transform:capitalize; margin:16px 2px 10px; display:flex; align-items:center; gap:8px;}
 .date-group-label .pill{font-size:11px; font-weight:700; color:#fff; background:var(--gold); border-radius:20px; padding:2px 9px;}
+
+/* checklist rápido de entrega */
+.deliver-hint{font-size:12px; color:#8a8f98; line-height:1.4; margin:2px 2px 12px;}
+.deliver-counts{display:flex; gap:16px; font-size:12px; font-weight:800; color:var(--navy-light); margin:0 2px 12px;}
+.deliver-counts span:first-child::before{content:"●"; color:#6aa6e0; margin-right:5px;}
+.deliver-counts span:last-child::before{content:"●"; color:#5fbf85; margin-right:5px;}
+.chk-row{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:11px 13px; margin-bottom:9px; border:1px solid rgba(14,42,82,0.08); box-shadow:var(--shadow-sm);}
+.chk-row.is-delivered{opacity:0.55;}
+.chkbox{width:38px;height:38px; flex-shrink:0; border-radius:11px; border:2px solid rgba(14,42,82,0.18); background:#fff; color:#fff; display:flex; align-items:center; justify-content:center; padding:0;}
+.chkbox svg{width:22px;height:22px;}
+.chkbox.on{background:linear-gradient(135deg,#2f7d4f,#256b42); border-color:#256b42;}
+.chk-info{flex:1; min-width:0;}
+.pay-tag{flex-shrink:0; border:none; padding:8px 12px; border-radius:11px; font-size:12px; font-weight:800; white-space:nowrap;}
+.pay-tag.paid{background:var(--delivered-bg); color:var(--delivered);}
+.pay-tag.debe{background:var(--pending-bg); color:var(--pending);}
 
 /* ---- Empty ---- */
 .empty-state{text-align:center; padding:44px 20px; color:#9aa0a8;}
@@ -391,17 +414,18 @@ function isFestivo(dk){ return FESTIVOS_2026.hasOwnProperty(dk); }
 function festivoName(dk){ return FESTIVOS_2026[dk] || ''; }
 function isWeekend(dow){ return dow === 0 || dow === 6; }
 
-// ---- Estado derivado del pedido: pending -> ready -> delivered ----
-function orderStatus(o){
-  if(o.delivered) return 'delivered';
-  if(o.paid) return 'ready';
-  return 'pending';
+// ---- Pago y entrega son INDEPENDIENTES (el niño puede recibir antes de pagar) ----
+function isDone(o){ return o.paid && o.delivered; }
+function payChip(o){
+  return o.paid
+    ? `<div class="chip chip-paid">${ICONS.check}Pagado</div>`
+    : `<div class="chip chip-debe">${ICONS.clock}Debe</div>`;
 }
-const STATUS_META = {
-  pending:   {label:'Pendiente pago', icon: ICONS.clock},
-  ready:     {label:'Por entregar',   icon: ICONS.truck},
-  delivered: {label:'Entregado',      icon: ICONS.check},
-};
+function delChip(o){
+  return o.delivered
+    ? `<div class="chip chip-entregado">${ICONS.check}Entregado</div>`
+    : `<div class="chip chip-porentregar">${ICONS.truck}Por entregar</div>`;
+}
 
 // ============ APP STATE ============
 let state = {
@@ -422,12 +446,14 @@ function dayStats(dk){
   return {
     count: list.length,
     totalQty: list.reduce((s,o)=>s+o.qty,0),
-    pending: list.filter(o=>orderStatus(o)==='pending').length,
-    ready: list.filter(o=>orderStatus(o)==='ready').length,
-    delivered: list.filter(o=>orderStatus(o)==='delivered').length,
+    debe: list.filter(o=>!o.paid).length,
+    porEntregar: list.filter(o=>!o.delivered).length,
+    done: list.filter(o=>isDone(o)).length,
   };
 }
-function deliveryQueue(){ return orders.filter(o => o.paid && !o.delivered); }
+// Por entregar = todo lo que aún no se ha entregado (aunque no esté pagado)
+function pendingDelivery(){ return orders.filter(o => !o.delivered); }
+function pendingDeliveryToday(){ const tk=todayKey(); return orders.filter(o => !o.delivered && o.date===tk); }
 
 // ============ RENDER: SYNC BANNER ============
 function renderSyncBanner(){
@@ -439,7 +465,7 @@ function renderSyncBanner(){
 // ============ RENDER: TOP BAR ============
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
-  const porEntregar = deliveryQueue().length;
+  const porEntregar = pendingDeliveryToday().length;
   const porCobrar = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0) * UNIT_PRICE;
 
   return `
@@ -491,9 +517,9 @@ function renderCalendar(){
       <div class="${classes}" ${blocked ? '' : `data-date="${dk}"`} ${festivo ? `title="${esc(festivoName(dk))}"` : ''}>
         <span>${d}</span>
         ${hasOrders ? `<div class="dot-row">
-          ${stats.pending>0?'<div class="dot pending"></div>':''}
-          ${stats.ready>0?'<div class="dot ready"></div>':''}
-          ${stats.delivered>0?'<div class="dot delivered"></div>':''}
+          ${stats.debe>0?'<div class="dot pending"></div>':''}
+          ${stats.porEntregar>0?'<div class="dot ready"></div>':''}
+          ${stats.done>0?'<div class="dot delivered"></div>':''}
         </div>` : ''}
       </div>`;
   }
@@ -510,9 +536,9 @@ function renderCalendar(){
       ${cells}
     </div>
     <div class="cal-legend">
-      <div class="legend-item"><span class="legend-dot" style="background:#f0a54a"></span>Pend. pago</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f0a54a"></span>Debe</div>
       <div class="legend-item"><span class="legend-dot" style="background:#6aa6e0"></span>Por entregar</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#5fbf85"></span>Entregado</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#5fbf85"></span>Completo</div>
       <div class="legend-item"><span class="legend-sq legend-festivo"></span>Festivo</div>
       <div class="legend-item"><span class="legend-sq legend-weekend"></span>Fin de semana</div>
     </div>
@@ -521,17 +547,15 @@ function renderCalendar(){
 
 // ============ RENDER: DAY ============
 function orderCardHtml(o){
-  const st = orderStatus(o);
-  const meta = STATUS_META[st];
   return `
-    <div class="order-card ${st==='delivered'?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+    <div class="order-card ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
       <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
       <div class="order-info">
         <div class="order-name">${esc(o.personName)}</div>
         <div class="order-meta">${personTypeLabel(o)} <span class="qty-badge">×${o.qty}</span></div>
       </div>
       <div class="order-right">
-        <div class="status-chip ${st}">${meta.icon}${meta.label}</div>
+        ${payChip(o)}${delChip(o)}
       </div>
     </div>`;
 }
@@ -540,10 +564,8 @@ function renderDayView(){
   if(!dk) return '';
   const dateObj = new Date(dk + 'T00:00:00');
   const dayLabel = dateObj.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
-  const list = ordersForDate(dk).slice().sort((a,b)=>{
-    const rank = {pending:0, ready:1, delivered:2};
-    return rank[orderStatus(a)] - rank[orderStatus(b)] || (b.createdAt||0)-(a.createdAt||0);
-  });
+  const list = ordersForDate(dk).slice().sort((a,b)=>
+    (a.delivered?1:0)-(b.delivered?1:0) || (b.createdAt||0)-(a.createdAt||0));
   const st = dayStats(dk);
 
   const cards = list.length ? list.map(orderCardHtml).join('') : `
@@ -564,79 +586,85 @@ function renderDayView(){
 }
 
 // ============ RENDER: DELIVERY QUEUE ============
+function deliverRow(o){
+  return `
+    <div class="chk-row ${o.delivered?'is-delivered':''}">
+      <button class="chkbox ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="Entregado">${o.delivered?ICONS.check:''}</button>
+      <div class="chk-info" data-act="open-order" data-id="${o.id}">
+        <div class="order-name">${esc(o.personName)}</div>
+        <div class="order-meta">${personTypeLabel(o)} <span class="qty-badge">×${o.qty}</span></div>
+      </div>
+      <button class="pay-tag ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>
+    </div>`;
+}
 function renderDeliverView(){
-  let q = deliveryQueue();
   const tk = todayKey();
+  let q = orders.slice();
   if(state.deliverScope === 'today') q = q.filter(o => o.date === tk);
-  q.sort((a,b)=> a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0));
+  // no entregados primero (por orden de registro), entregados abajo
+  q.sort((a,b)=> (a.delivered?1:0)-(b.delivered?1:0) || a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0));
+
+  const porEntregar = q.filter(o=>!o.delivered).length;
+  const entregados = q.filter(o=>o.delivered).length;
 
   let content;
   if(!q.length){
-    content = `<div class="empty-state"><div class="es-icon">${ICONS.check}</div>
-      <p>${state.deliverScope==='today'?'Nada por entregar hoy':'Todo entregado'}</p>
-      <div class="es-sub">Aquí aparecen los pedidos con pago confirmado, listos para entregar.</div></div>`;
-  } else {
-    // agrupar por fecha
+    content = `<div class="empty-state"><div class="es-icon">${ICONS.truck}</div>
+      <p>${state.deliverScope==='today'?'No hay pedidos hoy':'No hay pedidos'}</p>
+      <div class="es-sub">Los pedidos que registre la asistente aparecen aquí para entregar.</div></div>`;
+  } else if(state.deliverScope === 'all'){
     const groups = {};
     q.forEach(o => { (groups[o.date] = groups[o.date] || []).push(o); });
     content = Object.keys(groups).sort().map(dk => {
       const dObj = new Date(dk + 'T00:00:00');
       const lbl = dk===tk ? 'Hoy' : dObj.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'short'});
-      const totalQ = groups[dk].reduce((s,o)=>s+o.qty,0);
-      const cards = groups[dk].map(o => `
-        <div class="deliver-card">
-          <div class="deliver-top">
-            <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
-            <div class="order-info">
-              <div class="order-name">${esc(o.personName)}</div>
-              <div class="order-meta">${personTypeLabel(o)}</div>
-            </div>
-            <div class="deliver-qty-big">×${o.qty}</div>
-          </div>
-          <button class="deliver-btn" data-act="mark-delivered" data-id="${o.id}">${ICONS.check} Marcar entregado</button>
-        </div>`).join('');
-      return `<div class="date-group-label">${lbl} <span class="pill">${totalQ} granizados</span></div>${cards}`;
+      const pend = groups[dk].filter(o=>!o.delivered).length;
+      return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${groups[dk].map(deliverRow).join('')}`;
     }).join('');
+  } else {
+    content = q.map(deliverRow).join('');
   }
 
   return `
   <div class="day-view">
-    <div class="view-title">Cola de entrega</div>
+    <div class="view-title">Entregar</div>
+    <div class="deliver-hint">Marca la casilla ✓ cuando le des el granizado (aunque aún deba). Toca <b>Debe</b> cuando el papá pague.</div>
     <div class="deliver-toggle">
       <div class="filter-chip ${state.deliverScope==='today'?'active':''}" data-act="deliver-scope" data-s="today">Hoy</div>
       <div class="filter-chip ${state.deliverScope==='all'?'active':''}" data-act="deliver-scope" data-s="all">Todos</div>
     </div>
+    ${q.length?`<div class="deliver-counts"><span>${porEntregar} por entregar</span><span>${entregados} entregados</span></div>`:''}
     ${content}
   </div>`;
 }
 
 // ============ RENDER: LIST ============
 function renderListView(){
-  const filtered = orders.filter(o => {
-    const st = orderStatus(o);
-    if(state.listFilter === 'all') return true;
-    return st === state.listFilter;
-  }).slice().sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
+  const match = {
+    all: ()=>true,
+    debe: o=>!o.paid,
+    porentregar: o=>!o.delivered,
+    done: o=>isDone(o),
+  };
+  const filtered = orders.filter(match[state.listFilter]||match.all)
+    .slice().sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
 
   const counts = {
     all: orders.length,
-    pending: orders.filter(o=>orderStatus(o)==='pending').length,
-    ready: orders.filter(o=>orderStatus(o)==='ready').length,
-    delivered: orders.filter(o=>orderStatus(o)==='delivered').length,
+    debe: orders.filter(o=>!o.paid).length,
+    porentregar: orders.filter(o=>!o.delivered).length,
+    done: orders.filter(isDone).length,
   };
 
-  const rows = filtered.length ? filtered.map(o => {
-    const st = orderStatus(o); const meta = STATUS_META[st];
-    return `
-    <div class="order-card ${st==='delivered'?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+  const rows = filtered.length ? filtered.map(o => `
+    <div class="order-card ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
       <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
       <div class="order-info">
         <div class="order-name">${esc(o.personName)}</div>
         <div class="order-meta">${personTypeLabel(o)} · ${formatDateShort(o.date)} <span class="qty-badge">×${o.qty}</span></div>
       </div>
-      <div class="order-right"><div class="status-chip ${st}">${meta.icon}${meta.label}</div></div>
-    </div>`;
-  }).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
+      <div class="order-right">${payChip(o)}${delChip(o)}</div>
+    </div>`).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
 
   const chip = (f,label) => `<div class="filter-chip ${state.listFilter===f?'active':''}" data-act="filter" data-f="${f}">${label}<br><span style="font-size:10px;opacity:.7">${counts[f]}</span></div>`;
 
@@ -645,9 +673,9 @@ function renderListView(){
     <div class="view-title">Todos los pedidos</div>
     <div class="filter-row">
       ${chip('all','Todos')}
-      ${chip('pending','Pend. pago')}
-      ${chip('ready','Por entregar')}
-      ${chip('delivered','Entregados')}
+      ${chip('debe','Deben')}
+      ${chip('porentregar','Por entregar')}
+      ${chip('done','Completos')}
     </div>
     ${rows}
   </div>`;
@@ -663,7 +691,7 @@ function renderStatsView(){
   const paidQty = orders.filter(o=>o.paid).reduce((s,o)=>s+o.qty,0);
   const pendingQty = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0);
   const deliveredQty = orders.filter(o=>o.delivered).reduce((s,o)=>s+o.qty,0);
-  const porEntregarQty = deliveryQueue().reduce((s,o)=>s+o.qty,0);
+  const porEntregarQty = pendingDelivery().reduce((s,o)=>s+o.qty,0);
   const uniquePeople = new Set(orders.map(o=>o.personId)).size;
 
   const byPerson = {};
@@ -702,7 +730,7 @@ function renderStatsView(){
 
 // ============ RENDER: BOTTOM NAV ============
 function renderBottomNav(){
-  const porEntregar = deliveryQueue().length;
+  const porEntregar = pendingDeliveryToday().length;
   const tabs = [
     {id:'calendar', icon:ICONS.calendar, label:'Calendario'},
     {id:'deliver',  icon:ICONS.truck,    label:'Entregar', badge: porEntregar},
@@ -877,25 +905,12 @@ function renderPersonGrid(){
 }
 
 function statusTrackHtml(o){
-  const st = orderStatus(o);
-  const steps = [
-    {key:'pending', lbl:'Registrado'},
-    {key:'ready',   lbl:'Pagado'},
-    {key:'delivered', lbl:'Entregado'},
-  ];
-  const idx = {pending:0, ready:1, delivered:2}[st];
-  return `<div class="status-track">${steps.map((s,i)=>`
-    <div class="track-step ${i<idx?'done':''} ${i===idx?'current':''}">
-      ${i>0?'<div class="track-line"></div>':''}
-      <div class="track-dot">${i<idx?ICONS.check:(i+1)}</div>
-      <div class="track-lbl">${s.lbl}</div>
-    </div>`).join('')}</div>`;
+  return `<div style="display:flex; gap:8px; justify-content:center; margin:14px 0 2px;">${payChip(o)}${delChip(o)}</div>`;
 }
 
 function renderOrderActionsSheet(){
   const o = orders.find(x => x.id === state.modal.orderId);
   if(!o){ return `<div class="sheet"><div class="sheet-body"><div class="empty-state"><p>Pedido no encontrado</p></div></div></div>`; }
-  const st = orderStatus(o);
   return `
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
@@ -920,16 +935,14 @@ function renderOrderActionsSheet(){
             <button data-act="edit-qty" data-id="${o.id}" data-delta="1">+</button>
           </div>
         </div>
-        ${!o.delivered ? `
-          <button class="action-item ${o.paid?'':'green'}" data-act="toggle-paid" data-id="${o.id}">
-            ${o.paid ? ICONS.undo : ICONS.money}
-            <span>${o.paid ? 'Quitar pago (volver a pendiente)' : 'Confirmar pago'}</span>
-          </button>` : ''}
-        ${o.paid ? `
-          <button class="action-item ${o.delivered?'':'green'}" data-act="${o.delivered?'undo-delivered':'mark-delivered'}" data-id="${o.id}">
-            ${o.delivered ? ICONS.undo : ICONS.check}
-            <span>${o.delivered ? 'Deshacer entrega' : 'Marcar como entregado'}</span>
-          </button>` : ''}
+        <button class="action-item ${o.paid?'':'green'}" data-act="toggle-paid" data-id="${o.id}">
+          ${o.paid ? ICONS.undo : ICONS.money}
+          <span>${o.paid ? 'Marcar como no pagado (debe)' : 'Confirmar pago'}</span>
+        </button>
+        <button class="action-item ${o.delivered?'':'green'}" data-act="${o.delivered?'undo-delivered':'mark-delivered'}" data-id="${o.id}">
+          ${o.delivered ? ICONS.undo : ICONS.check}
+          <span>${o.delivered ? 'Deshacer entrega' : 'Marcar como entregado'}</span>
+        </button>
         <button class="action-item danger" data-act="ask-delete" data-id="${o.id}">
           ${ICONS.trash}<span>Eliminar pedido</span>
         </button>
@@ -986,17 +999,15 @@ function handleAction(e){
   else if(act === 'ask-delete'){ openConfirmDelete(el.dataset.id); }
   else if(act === 'confirm-delete'){ deleteOrderById(el.dataset.id); closeModal(); showToast('Pedido eliminado', ICONS.trash); }
 
-  else if(act === 'toggle-paid'){
+  else if(act === 'toggle-paid'){   // desde la hoja del pedido (cierra la hoja)
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
-    if(!o.paid) { o.delivered = false; o.deliveredAt = null; }
     upsertOrder(o); closeModal();
-    showToast(o.paid ? 'Pago confirmado' : 'Marcado como pendiente', o.paid?ICONS.money:ICONS.clock);
+    showToast(o.paid ? 'Pago confirmado' : 'Marcado como debe', o.paid?ICONS.money:ICONS.clock);
   }
-  else if(act === 'mark-delivered'){
+  else if(act === 'mark-delivered'){   // desde la hoja del pedido
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     o.delivered = true; o.deliveredAt = Date.now();
-    if(!o.paid){ o.paid = true; o.paidAt = o.paidAt || Date.now(); }
     upsertOrder(o); closeModal();
     showToast('¡Entregado! ✓', ICONS.check);
   }
@@ -1004,6 +1015,18 @@ function handleAction(e){
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     o.delivered = false; o.deliveredAt = null;
     upsertOrder(o); closeModal(); showToast('Entrega deshecha', ICONS.undo);
+  }
+  else if(act === 'chk-delivered'){   // casilla rápida en la pestaña Entregar (no cierra nada)
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.delivered = !o.delivered; o.deliveredAt = o.delivered ? Date.now() : null;
+    upsertOrder(o);
+    showToast(o.delivered ? 'Entregado ✓' : 'Entrega deshecha', o.delivered?ICONS.check:ICONS.undo);
+  }
+  else if(act === 'chk-paid'){   // chip de pago tocable en la pestaña Entregar
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
+    upsertOrder(o);
+    showToast(o.paid ? 'Pago confirmado ✓' : 'Marcado como debe', o.paid?ICONS.money:ICONS.clock);
   }
   else if(act === 'edit-qty'){
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
@@ -1108,7 +1131,19 @@ function boot(){
   render();
   initCloud();
   if('serviceWorker' in navigator){
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    // Recarga automática cuando entra en control una versión nueva de la app.
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(refreshing) return; refreshing = true; location.reload();
+    });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        // Revisa si hay versión nueva al abrir, al volver a la app y cada 60s.
+        reg.update();
+        document.addEventListener('visibilitychange', () => { if(!document.hidden) reg.update(); });
+        setInterval(() => reg.update(), 60000);
+      }).catch(()=>{});
+    });
   }
 }
 

@@ -68,13 +68,21 @@ adelante quieres cerrarlo con usuario/clave, se puede añadir login de Firebase 
 
 ## Cómo se usa el flujo
 
-1. **La asistente** abre la app en su celular, entra al **día** en el calendario y toca
-   **"Agregar pedido"**: elige estudiante (nombre y curso) o docente y la cantidad.
-2. Cuando el estudiante manda el **soporte de pago**, la asistente abre el pedido y toca
-   **"Confirmar pago"**. El pedido pasa a **"Por entregar"**.
-3. **Tú** abres la pestaña **"Entregar"** (muestra solo los pagados, listos) y al dar el
-   granizado tocas **"Marcar entregado"**. Se sincroniza al instante en ambos celulares.
-4. La pestaña **"Resumen"** muestra lo recaudado, lo que falta por cobrar y quién pide más.
+**Pago y entrega son independientes.** El niño puede recibir el granizado antes de que
+el papá pague — no hay que esperar el pago para entregar.
+
+1. **La asistente** entra al **día** en el calendario y toca **"Agregar pedido"**: elige
+   estudiante (nombre y curso) o docente y la cantidad. (Puede dejarlo como "Debe" o, si
+   ya pagó, marcar "Pago confirmado").
+2. **Tú**, en la pestaña **"Entregar"**, ves la lista del día. Al darle el granizado al
+   niño **marcas la casilla ✓** (aunque diga "Debe"). Es una casilla por niño: no hay que
+   entrar uno por uno. Se sincroniza al instante en ambos celulares.
+3. Cuando el papá **paga**, tocas el botón **"Debe"** de ese niño y pasa a **"Pagado"**
+   (o la asistente lo confirma desde su celular).
+4. La pestaña **"Pedidos"** filtra por **Deben / Por entregar / Completos**. La pestaña
+   **"Resumen"** muestra lo recaudado, lo que falta por cobrar y quién pide más.
+
+> Los cambios se actualizan solos en todos los dispositivos, sin recargar ni reinstalar.
 
 ## Instalar como app en el celular
 
