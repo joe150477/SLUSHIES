@@ -18,6 +18,12 @@
   --pending:#c2701a; --pending-bg:#fbeedd;
   --ready:#215d9c;   --ready-bg:#e6effb;
   --delivered:#2f7d4f; --delivered-bg:#e3f3e9;
+  /* Colores de estado (semáforo, claros y distintos) */
+  --pay-ok:#1f7a43;   --pay-ok-bg:#e2f4e9;      /* Pagado / Completo  = verde */
+  --pay-debe:#c62026; --pay-debe-bg:#fce3e4;    /* Debe (falta pago)  = rojo  */
+  --del-done:#1f5fa6; --del-done-bg:#e6effb;    /* Entregado          = azul  */
+  --del-wait:#b3801a; --del-wait-bg:#fbf1d9;    /* Por entregar       = ámbar */
+  --dot-debe:#e0524f; --dot-wait:#eaa63c; --dot-done:#4fbf7f;
   --shadow: 0 8px 24px rgba(14,42,82,0.16);
   --shadow-sm: 0 2px 8px rgba(14,42,82,0.10);
 }
@@ -80,9 +86,10 @@ body{
 .cal-day.weekend.has-orders{background:#e4e6ea;}
 .dot-row{display:flex; gap:3px;}
 .dot{width:5px;height:5px;border-radius:50%;}
-.dot.pending{background:#f0a54a;}
-.dot.ready{background:#6aa6e0;}
-.dot.delivered{background:#5fbf85;}
+.dot.pending{background:var(--dot-debe);}
+.dot.ready{background:var(--dot-wait);}
+.dot.delivered{background:var(--dot-done);}
+.dot{width:6px;height:6px;}
 .cal-legend{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:16px; padding-bottom:4px;}
 .legend-item{display:flex; align-items:center; gap:6px; font-size:11px; color:#888; font-weight:600;}
 .legend-dot{width:9px;height:9px;border-radius:50%; display:inline-block;}
@@ -118,13 +125,21 @@ body{
 .status-chip.ready{background:var(--ready-bg); color:var(--ready);}
 .status-chip.delivered{background:var(--delivered-bg); color:var(--delivered);}
 
-/* chips de estado (pago + entrega, independientes) */
-.chip{display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:10px; font-size:11px; font-weight:800; white-space:nowrap;}
+/* chips de estado (pago + entrega, independientes) — código de color tipo semáforo */
+.chip{display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:10px; font-size:11px; font-weight:800; white-space:nowrap; border:1px solid transparent;}
 .chip svg{width:12px;height:12px;}
-.chip-paid{background:var(--delivered-bg); color:var(--delivered);}
-.chip-debe{background:var(--pending-bg); color:var(--pending);}
-.chip-entregado{background:var(--ready-bg); color:var(--ready);}
-.chip-porentregar{background:rgba(14,42,82,0.06); color:var(--navy-light);}
+.chip-paid{background:var(--pay-ok-bg); color:var(--pay-ok); border-color:rgba(31,122,67,0.28);}
+.chip-debe{background:var(--pay-debe-bg); color:var(--pay-debe); border-color:rgba(198,32,38,0.28);}
+.chip-entregado{background:var(--del-done-bg); color:var(--del-done); border-color:rgba(31,95,166,0.28);}
+.chip-porentregar{background:var(--del-wait-bg); color:var(--del-wait); border-color:rgba(179,128,26,0.30);}
+
+/* franja de color a la izquierda de la tarjeta, para escanear de un vistazo */
+.order-card.acc-wait{box-shadow: inset 4px 0 0 var(--del-wait), var(--shadow-sm);}
+.order-card.acc-debe{box-shadow: inset 4px 0 0 var(--pay-debe), var(--shadow-sm);}
+.order-card.acc-done{box-shadow: inset 4px 0 0 var(--pay-ok), var(--shadow-sm);}
+.chk-row.acc-wait{box-shadow: inset 4px 0 0 var(--del-wait), var(--shadow-sm);}
+.chk-row.acc-debe{box-shadow: inset 4px 0 0 var(--pay-debe), var(--shadow-sm);}
+.chk-row.acc-done{box-shadow: inset 4px 0 0 var(--pay-ok), var(--shadow-sm);}
 
 /* ---- Delivery queue ---- */
 .deliver-toggle{display:flex; gap:8px; margin:2px 0 16px;}
@@ -142,8 +157,8 @@ body{
 /* checklist rápido de entrega */
 .deliver-hint{font-size:12px; color:#8a8f98; line-height:1.4; margin:2px 2px 12px;}
 .deliver-counts{display:flex; gap:16px; font-size:12px; font-weight:800; color:var(--navy-light); margin:0 2px 12px;}
-.deliver-counts span:first-child::before{content:"●"; color:#6aa6e0; margin-right:5px;}
-.deliver-counts span:last-child::before{content:"●"; color:#5fbf85; margin-right:5px;}
+.deliver-counts span:first-child::before{content:"●"; color:var(--del-wait); margin-right:5px;}
+.deliver-counts span:last-child::before{content:"●"; color:var(--del-done); margin-right:5px;}
 .chk-row{display:flex; align-items:center; gap:12px; background:#fff; border-radius:14px; padding:11px 13px; margin-bottom:9px; border:1px solid rgba(14,42,82,0.08); box-shadow:var(--shadow-sm);}
 .chk-row.is-delivered{opacity:0.55;}
 .chkbox{width:38px;height:38px; flex-shrink:0; border-radius:11px; border:2px solid rgba(14,42,82,0.18); background:#fff; color:#fff; display:flex; align-items:center; justify-content:center; padding:0;}
@@ -151,8 +166,8 @@ body{
 .chkbox.on{background:linear-gradient(135deg,#2f7d4f,#256b42); border-color:#256b42;}
 .chk-info{flex:1; min-width:0;}
 .pay-tag{flex-shrink:0; border:none; padding:8px 12px; border-radius:11px; font-size:12px; font-weight:800; white-space:nowrap;}
-.pay-tag.paid{background:var(--delivered-bg); color:var(--delivered);}
-.pay-tag.debe{background:var(--pending-bg); color:var(--pending);}
+.pay-tag.paid{background:var(--pay-ok-bg); color:var(--pay-ok); border:1px solid rgba(31,122,67,0.3);}
+.pay-tag.debe{background:var(--pay-debe-bg); color:var(--pay-debe); border:1px solid rgba(198,32,38,0.35);}
 
 /* ---- Empty ---- */
 .empty-state{text-align:center; padding:44px 20px; color:#9aa0a8;}
@@ -426,6 +441,8 @@ function delChip(o){
     ? `<div class="chip chip-entregado">${ICONS.check}Entregado</div>`
     : `<div class="chip chip-porentregar">${ICONS.truck}Por entregar</div>`;
 }
+// Franja de color de la tarjeta según lo que falta: amber=por entregar, rojo=debe, verde=completo
+function accClass(o){ return !o.delivered ? 'acc-wait' : (!o.paid ? 'acc-debe' : 'acc-done'); }
 
 // ============ APP STATE ============
 let state = {
@@ -536,9 +553,9 @@ function renderCalendar(){
       ${cells}
     </div>
     <div class="cal-legend">
-      <div class="legend-item"><span class="legend-dot" style="background:#f0a54a"></span>Debe</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#6aa6e0"></span>Por entregar</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#5fbf85"></span>Completo</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--dot-debe)"></span>Debe</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--dot-wait)"></span>Por entregar</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--dot-done)"></span>Completo</div>
       <div class="legend-item"><span class="legend-sq legend-festivo"></span>Festivo</div>
       <div class="legend-item"><span class="legend-sq legend-weekend"></span>Fin de semana</div>
     </div>
@@ -548,7 +565,7 @@ function renderCalendar(){
 // ============ RENDER: DAY ============
 function orderCardHtml(o){
   return `
-    <div class="order-card ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+    <div class="order-card ${accClass(o)} ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
       <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
       <div class="order-info">
         <div class="order-name">${esc(o.personName)}</div>
@@ -588,7 +605,7 @@ function renderDayView(){
 // ============ RENDER: DELIVERY QUEUE ============
 function deliverRow(o){
   return `
-    <div class="chk-row ${o.delivered?'is-delivered':''}">
+    <div class="chk-row ${accClass(o)} ${isDone(o)?'is-delivered':''}">
       <button class="chkbox ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="Entregado">${o.delivered?ICONS.check:''}</button>
       <div class="chk-info" data-act="open-order" data-id="${o.id}">
         <div class="order-name">${esc(o.personName)}</div>
@@ -657,7 +674,7 @@ function renderListView(){
   };
 
   const rows = filtered.length ? filtered.map(o => `
-    <div class="order-card ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+    <div class="order-card ${accClass(o)} ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
       <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
       <div class="order-info">
         <div class="order-name">${esc(o.personName)}</div>
