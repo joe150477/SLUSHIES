@@ -126,7 +126,8 @@ body{
 .status-chip.delivered{background:var(--delivered-bg); color:var(--delivered);}
 
 /* chips de estado (pago + entrega, independientes) — código de color tipo semáforo */
-.chip{display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:10px; font-size:11px; font-weight:800; white-space:nowrap; border:1px solid transparent;}
+.chip{display:inline-flex; align-items:center; gap:4px; padding:6px 11px; border-radius:10px; font-size:11.5px; font-weight:800; white-space:nowrap; border:1px solid transparent; font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; line-height:1.1;}
+.chip:active{transform:scale(0.93);}
 .chip svg{width:12px;height:12px;}
 .chip-paid{background:var(--pay-ok-bg); color:var(--pay-ok); border-color:rgba(31,122,67,0.28);}
 .chip-debe{background:var(--pay-debe-bg); color:var(--pay-debe); border-color:rgba(198,32,38,0.28);}
@@ -433,13 +434,13 @@ function isWeekend(dow){ return dow === 0 || dow === 6; }
 function isDone(o){ return o.paid && o.delivered; }
 function payChip(o){
   return o.paid
-    ? `<div class="chip chip-paid">${ICONS.check}Pagado</div>`
-    : `<div class="chip chip-debe">${ICONS.clock}Debe</div>`;
+    ? `<button class="chip chip-paid" data-act="chk-paid" data-id="${o.id}">${ICONS.check}Pagado</button>`
+    : `<button class="chip chip-debe" data-act="chk-paid" data-id="${o.id}">${ICONS.clock}Debe</button>`;
 }
 function delChip(o){
   return o.delivered
-    ? `<div class="chip chip-entregado">${ICONS.check}Entregado</div>`
-    : `<div class="chip chip-porentregar">${ICONS.truck}Por entregar</div>`;
+    ? `<button class="chip chip-entregado" data-act="chk-delivered" data-id="${o.id}">${ICONS.check}Entregado</button>`
+    : `<button class="chip chip-porentregar" data-act="chk-delivered" data-id="${o.id}">${ICONS.truck}Por entregar</button>`;
 }
 // Franja de color de la tarjeta según lo que falta: amber=por entregar, rojo=debe, verde=completo
 function accClass(o){ return !o.delivered ? 'acc-wait' : (!o.paid ? 'acc-debe' : 'acc-done'); }
@@ -1033,13 +1034,15 @@ function handleAction(e){
     o.delivered = false; o.deliveredAt = null;
     upsertOrder(o); closeModal(); showToast('Entrega deshecha', ICONS.undo);
   }
-  else if(act === 'chk-delivered'){   // casilla rápida en la pestaña Entregar (no cierra nada)
+  else if(act === 'chk-delivered'){   // casilla/etiqueta de entrega tocable (todas las vistas)
+    if(e.stopPropagation) e.stopPropagation();   // no abrir la ficha del pedido
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     o.delivered = !o.delivered; o.deliveredAt = o.delivered ? Date.now() : null;
     upsertOrder(o);
     showToast(o.delivered ? 'Entregado ✓' : 'Entrega deshecha', o.delivered?ICONS.check:ICONS.undo);
   }
-  else if(act === 'chk-paid'){   // chip de pago tocable en la pestaña Entregar
+  else if(act === 'chk-paid'){   // etiqueta de pago tocable (todas las vistas)
+    if(e.stopPropagation) e.stopPropagation();   // no abrir la ficha del pedido
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
     upsertOrder(o);
