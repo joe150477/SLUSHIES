@@ -454,6 +454,8 @@ let state = {
   modal: null,
   listFilter: 'all',
   deliverScope: 'today',
+  statsYear: new Date().getFullYear(),
+  statsMonth: new Date().getMonth(),
 };
 
 const app = document.getElementById('app');
@@ -657,6 +659,18 @@ function renderDeliverView(){
 }
 
 // ============ RENDER: LIST ============
+// Tarjeta de pedido con fecha + etiquetas tocables (reutilizable en Pedidos y Resumen)
+function orderCardDated(o){
+  return `
+    <div class="order-card ${accClass(o)} ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
+      <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
+      <div class="order-info">
+        <div class="order-name">${esc(o.personName)}</div>
+        <div class="order-meta">${personTypeLabel(o)} · ${formatDateShort(o.date)} <span class="qty-badge">×${o.qty}</span></div>
+      </div>
+      <div class="order-right">${payChip(o)}${delChip(o)}</div>
+    </div>`;
+}
 function renderListView(){
   const match = {
     all: ()=>true,
@@ -674,15 +688,8 @@ function renderListView(){
     done: orders.filter(isDone).length,
   };
 
-  const rows = filtered.length ? filtered.map(o => `
-    <div class="order-card ${accClass(o)} ${isDone(o)?'is-delivered':''}" data-act="open-order" data-id="${o.id}">
-      <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
-      <div class="order-info">
-        <div class="order-name">${esc(o.personName)}</div>
-        <div class="order-meta">${personTypeLabel(o)} · ${formatDateShort(o.date)} <span class="qty-badge">×${o.qty}</span></div>
-      </div>
-      <div class="order-right">${payChip(o)}${delChip(o)}</div>
-    </div>`).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
+  const rows = filtered.length ? filtered.map(orderCardDated).join('')
+    : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
 
   const chip = (f,label) => `<div class="filter-chip ${state.listFilter===f?'active':''}" data-act="filter" data-f="${f}">${label}<br><span style="font-size:10px;opacity:.7">${counts[f]}</span></div>`;
 
@@ -703,46 +710,50 @@ function formatDateShort(dk){
   return d.toLocaleDateString('es-CO', {day:'numeric', month:'short'});
 }
 
-// ============ RENDER: STATS ============
+// ============ RENDER: STATS (por mes) ============
 function renderStatsView(){
-  const totalQty = orders.reduce((s,o)=>s+o.qty,0);
-  const paidQty = orders.filter(o=>o.paid).reduce((s,o)=>s+o.qty,0);
-  const pendingQty = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0);
-  const deliveredQty = orders.filter(o=>o.delivered).reduce((s,o)=>s+o.qty,0);
-  const porEntregarQty = pendingDelivery().reduce((s,o)=>s+o.qty,0);
-  const uniquePeople = new Set(orders.map(o=>o.personId)).size;
+  const y = state.statsYear, m = state.statsMonth;
+  const prefix = `${y}-${pad(m+1)}`;
+  const mo = orders.filter(o => o.date.startsWith(prefix));
+  const sumQ = (f) => mo.filter(f).reduce((s,o)=>s+o.qty,0);
 
-  const byPerson = {};
-  orders.forEach(o => {
-    if(!byPerson[o.personId]) byPerson[o.personId] = {name:o.personName, type:o.personType, qty:0};
-    byPerson[o.personId].qty += o.qty;
-  });
-  const topBuyers = Object.values(byPerson).sort((a,b)=>b.qty-a.qty).slice(0,8);
-  const buyersHtml = topBuyers.length ? topBuyers.map(b => `
-    <div class="list-row">
-      <div class="lr-avatar ${b.type==='teacher'?'teacher':''}">${initials(b.name)}</div>
-      <div class="lr-name">${esc(b.name)}</div>
-      <div class="lr-val">×${b.qty}</div>
-    </div>`).join('') : `<div class="empty-state"><div class="es-icon">${ICONS.stats}</div><p>Aún no hay datos</p></div>`;
+  const vendidos    = sumQ(()=>true);
+  const recaudado   = sumQ(o=>o.paid) * UNIT_PRICE;
+  const porCobrar   = sumQ(o=>!o.paid) * UNIT_PRICE;
+  const porEntregar = sumQ(o=>!o.delivered);
+  const entregados  = sumQ(o=>o.delivered);
+
+  const byDate = (a,b)=> a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0);
+  const deben      = mo.filter(o=>!o.paid).sort(byDate);
+  const pagoFalta  = mo.filter(o=>o.paid && !o.delivered).sort(byDate);
+  const debenTotal = deben.reduce((s,o)=>s+o.qty,0) * UNIT_PRICE;
 
   return `
   <div class="day-view">
-    <div class="view-title">Resumen</div>
-    <div class="section-label" style="margin-top:6px;">Dinero</div>
-    <div class="sv-grid">
-      <div class="sv-card" style="border-color:rgba(47,125,79,0.25)"><div class="sv-num money" style="color:var(--delivered)">${formatCOP(paidQty*UNIT_PRICE)}</div><div class="sv-lbl">Recaudado (pagado)</div></div>
-      <div class="sv-card" style="border-color:rgba(194,112,26,0.25)"><div class="sv-num money" style="color:var(--pending)">${formatCOP(pendingQty*UNIT_PRICE)}</div><div class="sv-lbl">Por cobrar</div></div>
+    <div class="view-title">Resumen del mes</div>
+    <div class="cal-nav" style="margin-bottom:12px;">
+      <button data-act="stats-prev-month">${ICONS.back}</button>
+      <div class="cal-title">${MONTH_NAMES[m]} ${y}</div>
+      <button data-act="stats-next-month" style="transform:rotate(180deg)">${ICONS.back}</button>
     </div>
-    <div class="section-label">Granizados</div>
+
+    <div class="section-label" style="margin-top:2px;">¿Cómo vamos este mes?</div>
     <div class="sv-grid">
-      <div class="sv-card"><div class="sv-num">${totalQty}</div><div class="sv-lbl">Total pedidos</div></div>
-      <div class="sv-card"><div class="sv-num">${uniquePeople}</div><div class="sv-lbl">Clientes distintos</div></div>
-      <div class="sv-card" style="border-color:rgba(33,93,156,0.22)"><div class="sv-num" style="color:var(--ready)">${porEntregarQty}</div><div class="sv-lbl">Por entregar</div></div>
-      <div class="sv-card" style="border-color:rgba(47,125,79,0.22)"><div class="sv-num" style="color:var(--delivered)">${deliveredQty}</div><div class="sv-lbl">Entregados</div></div>
+      <div class="sv-card" style="border-color:rgba(31,122,67,0.28)"><div class="sv-num money" style="color:var(--pay-ok)">${formatCOP(recaudado)}</div><div class="sv-lbl">Recaudado</div></div>
+      <div class="sv-card" style="border-color:rgba(198,32,38,0.28)"><div class="sv-num money" style="color:var(--pay-debe)">${formatCOP(porCobrar)}</div><div class="sv-lbl">Por cobrar</div></div>
+      <div class="sv-card"><div class="sv-num">${vendidos}</div><div class="sv-lbl">Granizados vendidos</div></div>
+      <div class="sv-card" style="border-color:rgba(179,128,26,0.28)"><div class="sv-num" style="color:var(--del-wait)">${porEntregar}</div><div class="sv-lbl">Por entregar</div></div>
     </div>
-    <div class="section-label">Quién pide más</div>
-    ${buyersHtml}
-    <div style="text-align:center; font-size:11px; color:#aab0b8; margin-top:18px;">Precio unitario: ${formatCOP(UNIT_PRICE)} · edítalo en firebase-config.js</div>
+
+    <div class="section-label">Deben este mes${deben.length?` · ${formatCOP(debenTotal)}`:''}</div>
+    ${deben.length ? deben.map(orderCardDated).join('')
+      : `<div class="empty-state" style="padding:22px;"><p>Nadie debe este mes 🎉</p></div>`}
+
+    <div class="section-label">Pagaron, falta entregar</div>
+    ${pagoFalta.length ? pagoFalta.map(orderCardDated).join('')
+      : `<div class="empty-state" style="padding:22px;"><p>Todo lo pagado ya se entregó ✓</p></div>`}
+
+    <div style="text-align:center; font-size:11px; color:#aab0b8; margin:16px 0 2px;">${entregados} entregados este mes · precio ${formatCOP(UNIT_PRICE)} c/u</div>
   </div>`;
 }
 
@@ -1013,6 +1024,8 @@ function handleAction(e){
   else if(act === 'close-modal'){ closeModal(); }
   else if(act === 'filter'){ state.listFilter = el.dataset.f; render(); }
   else if(act === 'deliver-scope'){ state.deliverScope = el.dataset.s; render(); }
+  else if(act === 'stats-prev-month'){ state.statsMonth--; if(state.statsMonth<0){state.statsMonth=11; state.statsYear--;} render(); }
+  else if(act === 'stats-next-month'){ state.statsMonth++; if(state.statsMonth>11){state.statsMonth=0; state.statsYear++;} render(); }
   else if(act === 'open-order'){ openOrderActions(el.dataset.id); }
   else if(act === 'ask-delete'){ openConfirmDelete(el.dataset.id); }
   else if(act === 'confirm-delete'){ deleteOrderById(el.dataset.id); closeModal(); showToast('Pedido eliminado', ICONS.trash); }
