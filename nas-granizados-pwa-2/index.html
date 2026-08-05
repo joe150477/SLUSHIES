@@ -348,6 +348,8 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
+const APP_VERSION = '8';
+const APP_UPDATED = '5 ago 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
 let cloudOn = false;              // ¿estamos sincronizados con Firebase?
@@ -495,7 +497,7 @@ function renderTopbar(){
         <img src="logo.png" class="brand-logo rocket-anim" alt="NAS" onerror="this.style.display='none'">
         <div class="brand-text">
           <h1>NAS Granizados</h1>
-          <p>New Academy School</p>
+          <p>New Academy School · v${APP_VERSION}</p>
         </div>
       </div>
       <div class="sync-pill ${cloudOn?'':'local'}"><span class="dot-live"></span>${cloudOn?'En línea':'Local'}</div>
@@ -754,6 +756,7 @@ function renderStatsView(){
       : `<div class="empty-state" style="padding:22px;"><p>Todo lo pagado ya se entregó ✓</p></div>`}
 
     <div style="text-align:center; font-size:11px; color:#aab0b8; margin:16px 0 2px;">${entregados} entregados este mes · precio ${formatCOP(UNIT_PRICE)} c/u</div>
+    <div style="text-align:center; font-size:11px; color:#aab0b8; margin:4px 0 2px;">Versión ${APP_VERSION} · actualizado ${APP_UPDATED}</div>
   </div>`;
 }
 
@@ -1131,7 +1134,8 @@ function renderLock(){
     <div class="lk-sub">Ingresa el PIN para continuar</div>
     <div class="pin-dots">${dots}</div>
     <div class="keypad">${keys}</div>
-    <div class="lk-err" id="lk-err"></div>`;
+    <div class="lk-err" id="lk-err"></div>
+    <div style="position:absolute; bottom:max(16px,env(safe-area-inset-bottom)); font-size:11px; opacity:0.45;">Versión ${APP_VERSION} · ${APP_UPDATED}</div>`;
   document.body.appendChild(lock);
   lock.querySelectorAll('[data-key]').forEach(b => b.addEventListener('click', () => pinPress(b.dataset.key)));
 }

@@ -1,4 +1,4 @@
-const CACHE = 'nas-granizados-v7';
+const CACHE = 'nas-granizados-v8';
 const CORE = [
   './', './index.html', './data.js', './firebase-config.js', './manifest.json',
   './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',

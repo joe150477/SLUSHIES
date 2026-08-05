@@ -32,7 +32,7 @@ const FIREBASE_CONFIG = {
 };
 
 // Precio de un granizado (en pesos). Cámbialo si sube el precio.
-const UNIT_PRICE = 2000;
+const UNIT_PRICE = 6000;
 
 // PIN para entrar a la app (candado de acceso, no seguridad real).
 // Cámbialo por el que quieran usar tú y la asistente. Puede ser de 4 a 6 dígitos.
