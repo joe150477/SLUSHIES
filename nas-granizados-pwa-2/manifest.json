@@ -1,6 +1,6 @@
 {
-  "name": "NAS Granizados",
-  "short_name": "NAS Granizados",
+  "name": "NAS Snacks",
+  "short_name": "NAS Snacks",
   "description": "Pedidos y entrega de granizados - New Academy School",
   "start_url": "./index.html",
   "display": "standalone",

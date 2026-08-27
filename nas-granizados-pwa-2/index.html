@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>NAS Granizados</title>
+<title>NAS Snacks</title>
+<meta name="apple-mobile-web-app-title" content="NAS Snacks">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0e2a52">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -355,7 +356,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '9';
+const APP_VERSION = '10';
 const APP_UPDATED = '5 ago 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -517,7 +518,7 @@ function renderTopbar(){
       <div class="brand">
         <img src="logo.png" class="brand-logo rocket-anim" alt="NAS" onerror="this.style.display='none'">
         <div class="brand-text">
-          <h1>NAS Granizados</h1>
+          <h1>NAS Snacks</h1>
           <p>New Academy School · v${APP_VERSION}</p>
         </div>
       </div>
@@ -1167,7 +1168,7 @@ function renderLock(){
   lock.className = 'lock'; lock.id = 'lock';
   lock.innerHTML = `
     <img src="logo.png" class="lock-logo" alt="NAS" onerror="this.style.display='none'">
-    <h2>NAS Granizados</h2>
+    <h2>NAS Snacks</h2>
     <div class="lk-sub">Ingresa el PIN para continuar</div>
     <div class="pin-dots">${dots}</div>
     <div class="keypad">${keys}</div>
