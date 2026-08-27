@@ -71,8 +71,8 @@ body{
 
 /* ---- Selector de producto ---- */
 .product-switch{display:flex; gap:8px; max-width:480px; margin:0 auto; padding:12px 16px 2px;}
-.prod-btn{flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border-radius:14px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:14px; font-weight:800; color:var(--navy-light); font-family:inherit;}
-.prod-btn img{width:28px;height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;}
+.prod-btn{flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:7px 10px; border-radius:16px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:15px; font-weight:800; color:var(--navy-light); font-family:inherit;}
+.prod-btn img{width:42px;height:42px; object-fit:contain; flex-shrink:0;}
 .prod-btn.active{background:var(--navy); color:var(--gold-light); border-color:var(--navy); box-shadow:var(--shadow-sm);}
 .prod-btn:active{transform:scale(0.98);}
 
@@ -356,7 +356,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const APP_UPDATED = '5 ago 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -427,8 +427,8 @@ function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : (GR
 
 // ---- Productos (cada uno con su precio, ícono y estadísticas separadas) ----
 const PRODUCTS = {
-  slushie: { label:'Slushies', price: UNIT_PRICE, icon:'icons/icon-192.png', unit:'granizado', unitP:'granizados' },
-  brownie: { label:'Brownies', price: (typeof BROWNIE_PRICE!=='undefined'?BROWNIE_PRICE:10000), icon:'icons/brownie-192.png', unit:'brownie', unitP:'brownies' },
+  slushie: { label:'Slushies', price: UNIT_PRICE, icon:'icons/slushie-flat.png', unit:'granizado', unitP:'granizados' },
+  brownie: { label:'Brownies', price: (typeof BROWNIE_PRICE!=='undefined'?BROWNIE_PRICE:10000), icon:'icons/brownie-flat.png', unit:'brownie', unitP:'brownies' },
 };
 function unitName(){ return PRODUCTS[state.activeProduct].unit; }
 function unitPlural(){ return PRODUCTS[state.activeProduct].unitP; }
