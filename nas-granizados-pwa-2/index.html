@@ -68,6 +68,13 @@ body{
 .summary-card .num.small{font-size:15px;}
 .summary-card .lbl{font-size:10px; opacity:0.66; margin-top:3px; letter-spacing:0.2px;}
 
+/* ---- Selector de producto ---- */
+.product-switch{display:flex; gap:8px; max-width:480px; margin:0 auto; padding:12px 16px 2px;}
+.prod-btn{flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border-radius:14px; border:1.5px solid rgba(14,42,82,0.12); background:#fff; font-size:14px; font-weight:800; color:var(--navy-light); font-family:inherit;}
+.prod-btn img{width:28px;height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;}
+.prod-btn.active{background:var(--navy); color:var(--gold-light); border-color:var(--navy); box-shadow:var(--shadow-sm);}
+.prod-btn:active{transform:scale(0.98);}
+
 /* ---- Calendar ---- */
 .cal-wrap{padding: 18px 16px 8px;}
 .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding:0 4px;}
@@ -348,7 +355,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '8';
+const APP_VERSION = '9';
 const APP_UPDATED = '5 ago 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -417,6 +424,19 @@ function todayKey(){ const t = new Date(); return dateKey(t.getFullYear(), t.get
 function formatCOP(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
 function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : (GRADE_LABELS[o.grade] + ' grado'); }
 
+// ---- Productos (cada uno con su precio, ícono y estadísticas separadas) ----
+const PRODUCTS = {
+  slushie: { label:'Slushies', price: UNIT_PRICE, icon:'icons/icon-192.png', unit:'granizado', unitP:'granizados' },
+  brownie: { label:'Brownies', price: (typeof BROWNIE_PRICE!=='undefined'?BROWNIE_PRICE:10000), icon:'icons/brownie-192.png', unit:'brownie', unitP:'brownies' },
+};
+function unitName(){ return PRODUCTS[state.activeProduct].unit; }
+function unitPlural(){ return PRODUCTS[state.activeProduct].unitP; }
+function unitFor(n){ return n===1 ? unitName() : unitPlural(); }
+function isProd(o){ return (o.product||'slushie') === state.activeProduct; }   // producto activo
+function priceOf(o){ return (PRODUCTS[o.product||'slushie']||PRODUCTS.slushie).price; }
+function orderTotal(o){ return o.qty * priceOf(o); }
+function activePrice(){ return PRODUCTS[state.activeProduct].price; }
+
 const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DOW = ['D','L','M','M','J','V','S'];
 
@@ -458,11 +478,12 @@ let state = {
   deliverScope: 'today',
   statsYear: new Date().getFullYear(),
   statsMonth: new Date().getMonth(),
+  activeProduct: 'slushie',
 };
 
 const app = document.getElementById('app');
 
-function ordersForDate(dk){ return orders.filter(o => o.date === dk); }
+function ordersForDate(dk){ return orders.filter(o => o.date === dk && isProd(o)); }
 function dayStats(dk){
   const list = ordersForDate(dk);
   return {
@@ -474,8 +495,8 @@ function dayStats(dk){
   };
 }
 // Por entregar = todo lo que aún no se ha entregado (aunque no esté pagado)
-function pendingDelivery(){ return orders.filter(o => !o.delivered); }
-function pendingDeliveryToday(){ const tk=todayKey(); return orders.filter(o => !o.delivered && o.date===tk); }
+function pendingDelivery(){ return orders.filter(o => !o.delivered && isProd(o)); }
+function pendingDeliveryToday(){ const tk=todayKey(); return orders.filter(o => !o.delivered && o.date===tk && isProd(o)); }
 
 // ============ RENDER: SYNC BANNER ============
 function renderSyncBanner(){
@@ -488,7 +509,7 @@ function renderSyncBanner(){
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
   const porEntregar = pendingDeliveryToday().length;
-  const porCobrar = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.qty,0) * UNIT_PRICE;
+  const porCobrar = orders.filter(o=>!o.paid && isProd(o)).reduce((s,o)=>s+orderTotal(o),0);
 
   return `
   <div class="topbar">
@@ -503,7 +524,7 @@ function renderTopbar(){
       <div class="sync-pill ${cloudOn?'':'local'}"><span class="dot-live"></span>${cloudOn?'En línea':'Local'}</div>
     </div>
     <div class="summary-row">
-      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">Granizados hoy</div></div>
+      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">${PRODUCTS[state.activeProduct].label} hoy</div></div>
       <div class="summary-card"><div class="num">${porEntregar}</div><div class="lbl">Por entregar</div></div>
       <div class="summary-card"><div class="num small">${formatCOP(porCobrar)}</div><div class="lbl">Por cobrar</div></div>
     </div>
@@ -602,7 +623,7 @@ function renderDayView(){
     <div class="day-title">${dayLabel}</div>
     <div style="height:14px"></div>
     <button class="add-order-btn" data-act="new-order">${ICONS.plus} Agregar pedido</button>
-    <div class="section-label">Pedidos del día · ${list.length} ${st.count?`&nbsp;·&nbsp; ${st.totalQty} granizados`:''}</div>
+    <div class="section-label">Pedidos del día · ${list.length} ${st.count?`&nbsp;·&nbsp; ${st.totalQty} ${unitPlural()}`:''}</div>
     ${cards}
   </div>`;
 }
@@ -621,7 +642,7 @@ function deliverRow(o){
 }
 function renderDeliverView(){
   const tk = todayKey();
-  let q = orders.slice();
+  let q = orders.filter(isProd);
   if(state.deliverScope === 'today') q = q.filter(o => o.date === tk);
   // no entregados primero (por orden de registro), entregados abajo
   q.sort((a,b)=> (a.delivered?1:0)-(b.delivered?1:0) || a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0));
@@ -650,7 +671,7 @@ function renderDeliverView(){
   return `
   <div class="day-view">
     <div class="view-title">Entregar</div>
-    <div class="deliver-hint">Marca la casilla ✓ cuando le des el granizado (aunque aún deba). Toca <b>Debe</b> cuando el papá pague.</div>
+    <div class="deliver-hint">Marca la casilla ✓ cuando le des el ${unitName()} (aunque aún deba). Toca <b>Debe</b> cuando el papá pague.</div>
     <div class="deliver-toggle">
       <div class="filter-chip ${state.deliverScope==='today'?'active':''}" data-act="deliver-scope" data-s="today">Hoy</div>
       <div class="filter-chip ${state.deliverScope==='all'?'active':''}" data-act="deliver-scope" data-s="all">Todos</div>
@@ -680,14 +701,15 @@ function renderListView(){
     porentregar: o=>!o.delivered,
     done: o=>isDone(o),
   };
-  const filtered = orders.filter(match[state.listFilter]||match.all)
+  const scoped = orders.filter(isProd);
+  const filtered = scoped.filter(match[state.listFilter]||match.all)
     .slice().sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
 
   const counts = {
-    all: orders.length,
-    debe: orders.filter(o=>!o.paid).length,
-    porentregar: orders.filter(o=>!o.delivered).length,
-    done: orders.filter(isDone).length,
+    all: scoped.length,
+    debe: scoped.filter(o=>!o.paid).length,
+    porentregar: scoped.filter(o=>!o.delivered).length,
+    done: scoped.filter(isDone).length,
   };
 
   const rows = filtered.length ? filtered.map(orderCardDated).join('')
@@ -716,23 +738,25 @@ function formatDateShort(dk){
 function renderStatsView(){
   const y = state.statsYear, m = state.statsMonth;
   const prefix = `${y}-${pad(m+1)}`;
-  const mo = orders.filter(o => o.date.startsWith(prefix));
+  const mo = orders.filter(o => o.date.startsWith(prefix) && isProd(o));
   const sumQ = (f) => mo.filter(f).reduce((s,o)=>s+o.qty,0);
+  const sumMoney = (f) => mo.filter(f).reduce((s,o)=>s+orderTotal(o),0);
 
   const vendidos    = sumQ(()=>true);
-  const recaudado   = sumQ(o=>o.paid) * UNIT_PRICE;
-  const porCobrar   = sumQ(o=>!o.paid) * UNIT_PRICE;
+  const recaudado   = sumMoney(o=>o.paid);
+  const porCobrar   = sumMoney(o=>!o.paid);
   const porEntregar = sumQ(o=>!o.delivered);
   const entregados  = sumQ(o=>o.delivered);
 
   const byDate = (a,b)=> a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0);
   const deben      = mo.filter(o=>!o.paid).sort(byDate);
   const pagoFalta  = mo.filter(o=>o.paid && !o.delivered).sort(byDate);
-  const debenTotal = deben.reduce((s,o)=>s+o.qty,0) * UNIT_PRICE;
+  const debenTotal = deben.reduce((s,o)=>s+orderTotal(o),0);
+  const pLabel = PRODUCTS[state.activeProduct].label;
 
   return `
   <div class="day-view">
-    <div class="view-title">Resumen del mes</div>
+    <div class="view-title">Resumen · ${pLabel}</div>
     <div class="cal-nav" style="margin-bottom:12px;">
       <button data-act="stats-prev-month">${ICONS.back}</button>
       <div class="cal-title">${MONTH_NAMES[m]} ${y}</div>
@@ -743,7 +767,7 @@ function renderStatsView(){
     <div class="sv-grid">
       <div class="sv-card" style="border-color:rgba(31,122,67,0.28)"><div class="sv-num money" style="color:var(--pay-ok)">${formatCOP(recaudado)}</div><div class="sv-lbl">Recaudado</div></div>
       <div class="sv-card" style="border-color:rgba(198,32,38,0.28)"><div class="sv-num money" style="color:var(--pay-debe)">${formatCOP(porCobrar)}</div><div class="sv-lbl">Por cobrar</div></div>
-      <div class="sv-card"><div class="sv-num">${vendidos}</div><div class="sv-lbl">Granizados vendidos</div></div>
+      <div class="sv-card"><div class="sv-num">${vendidos}</div><div class="sv-lbl">${pLabel} vendidos</div></div>
       <div class="sv-card" style="border-color:rgba(179,128,26,0.28)"><div class="sv-num" style="color:var(--del-wait)">${porEntregar}</div><div class="sv-lbl">Por entregar</div></div>
     </div>
 
@@ -755,7 +779,7 @@ function renderStatsView(){
     ${pagoFalta.length ? pagoFalta.map(orderCardDated).join('')
       : `<div class="empty-state" style="padding:22px;"><p>Todo lo pagado ya se entregó ✓</p></div>`}
 
-    <div style="text-align:center; font-size:11px; color:#aab0b8; margin:16px 0 2px;">${entregados} entregados este mes · precio ${formatCOP(UNIT_PRICE)} c/u</div>
+    <div style="text-align:center; font-size:11px; color:#aab0b8; margin:16px 0 2px;">${entregados} entregados este mes · precio ${formatCOP(activePrice())} c/u</div>
     <div style="text-align:center; font-size:11px; color:#aab0b8; margin:4px 0 2px;">Versión ${APP_VERSION} · actualizado ${APP_UPDATED}</div>
   </div>`;
 }
@@ -793,11 +817,22 @@ function render(){
   app.innerHTML = `
     ${renderSyncBanner()}
     ${showTopbar ? renderTopbar() : ''}
+    ${renderProductSwitch()}
     ${body}
     ${renderBottomNav()}
   `;
   renderModal();
   attachEvents();
+}
+
+// Selector de producto (Slushies / Brownies) — separa ventas y estadísticas
+function renderProductSwitch(){
+  return `<div class="product-switch">
+    ${Object.keys(PRODUCTS).map(p => `
+      <button class="prod-btn ${state.activeProduct===p?'active':''}" data-act="set-product" data-p="${p}">
+        <img src="${PRODUCTS[p].icon}" alt="">${PRODUCTS[p].label}
+      </button>`).join('')}
+  </div>`;
 }
 
 // ============ MODAL: NEW ORDER ============
@@ -873,7 +908,7 @@ function renderNewOrderSheet(){
         <div class="qty-display">${d.qty}</div>
         <button class="qty-btn" data-act="qty-inc">+</button>
       </div>
-      <div class="qty-sub">${formatCOP(d.qty*UNIT_PRICE)} en total</div>
+      <div class="qty-sub">${formatCOP(d.qty*activePrice())} en total</div>
       <div class="quick-qty-row">
         ${[1,2,3,4,5].map(n => `<div class="quick-qty-btn ${d.qty===n?'active':''}" data-act="qty-set" data-n="${n}">${n}</div>`).join('')}
       </div>`;
@@ -884,10 +919,11 @@ function renderNewOrderSheet(){
         <div class="confirm-row"><span class="k">Cliente</span><span class="v">${esc(d.personName)}</span></div>
         <div class="confirm-row"><span class="k">Curso</span><span class="v">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</span></div>
         <div class="confirm-divider"></div>
-        <div class="confirm-row"><span class="k">Cantidad</span><span class="v">${d.qty} granizado${d.qty>1?'s':''}</span></div>
+        <div class="confirm-row"><span class="k">Producto</span><span class="v">${PRODUCTS[state.activeProduct].label.replace(/s$/,'')}</span></div>
+        <div class="confirm-row"><span class="k">Cantidad</span><span class="v">${d.qty} ${unitFor(d.qty)}</span></div>
         <div class="confirm-row"><span class="k">Fecha</span><span class="v">${formatDateShort(state.selectedDate)}</span></div>
         <div class="confirm-divider"></div>
-        <div class="confirm-row"><span class="k">Total</span><span class="v total">${formatCOP(d.qty*UNIT_PRICE)}</span></div>
+        <div class="confirm-row"><span class="k">Total</span><span class="v total">${formatCOP(d.qty*activePrice())}</span></div>
       </div>
       <div class="section-label" style="margin-top:0;">¿Ya envió el soporte de pago?</div>
       <div class="payment-toggle">
@@ -954,7 +990,7 @@ function renderOrderActionsSheet(){
       <div style="text-align:center;">
         <div class="person-avatar-lg" style="${o.personType==='teacher'?'background:var(--red);color:#fff':''}">${initials(o.personName)}</div>
         <div style="font-weight:800; font-size:18px;">${esc(o.personName)}</div>
-        <div style="font-size:12.5px; color:#8a8f98; margin-top:3px;">${personTypeLabel(o)} · ${formatDateShort(o.date)} · ${formatCOP(o.qty*UNIT_PRICE)}</div>
+        <div style="font-size:12.5px; color:#8a8f98; margin-top:3px;">${personTypeLabel(o)} · ${formatDateShort(o.date)} · ${formatCOP(orderTotal(o))}</div>
       </div>
       ${statusTrackHtml(o)}
       <div style="height:14px"></div>
@@ -1026,6 +1062,7 @@ function handleAction(e){
   else if(act === 'new-order'){ openNewOrderModal(); }
   else if(act === 'close-modal'){ closeModal(); }
   else if(act === 'filter'){ state.listFilter = el.dataset.f; render(); }
+  else if(act === 'set-product'){ state.activeProduct = el.dataset.p; render(); }
   else if(act === 'deliver-scope'){ state.deliverScope = el.dataset.s; render(); }
   else if(act === 'stats-prev-month'){ state.statsMonth--; if(state.statsMonth<0){state.statsMonth=11; state.statsYear--;} render(); }
   else if(act === 'stats-next-month'){ state.statsMonth++; if(state.statsMonth>11){state.statsMonth=0; state.statsYear++;} render(); }
@@ -1095,7 +1132,7 @@ function handleAction(e){
     const d = state.modal.data;
     const now = Date.now();
     upsertOrder({
-      id: uid(), date: state.selectedDate,
+      id: uid(), date: state.selectedDate, product: state.activeProduct,
       personId: d.personId, personName: d.personName, personType: d.personType,
       grade: d.personType === 'student' ? d.grade : null,
       qty: d.qty, paid: !!d.paid, paidAt: d.paid ? now : null,

@@ -31,8 +31,9 @@ const FIREBASE_CONFIG = {
   appId: "1:875515899704:web:9e0108130fc3f90ccc9bcd"
 };
 
-// Precio de un granizado (en pesos). Cámbialo si sube el precio.
-const UNIT_PRICE = 6000;
+// Precios (en pesos). Cámbialos si suben.
+const UNIT_PRICE = 6000;      // Slushie / granizado
+const BROWNIE_PRICE = 10000;  // Brownie con helado
 
 // PIN para entrar a la app (candado de acceso, no seguridad real).
 // Cámbialo por el que quieran usar tú y la asistente. Puede ser de 4 a 6 dígitos.

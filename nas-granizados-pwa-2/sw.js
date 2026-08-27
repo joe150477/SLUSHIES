@@ -1,7 +1,8 @@
-const CACHE = 'nas-granizados-v8';
+const CACHE = 'nas-granizados-v9';
 const CORE = [
   './', './index.html', './data.js', './firebase-config.js', './manifest.json',
   './logo.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
+  './icons/brownie-192.png', './icons/brownie-512.png',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
 ];
