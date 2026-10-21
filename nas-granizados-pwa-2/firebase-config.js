@@ -34,6 +34,10 @@ const FIREBASE_CONFIG = {
 // Precios (en pesos). Cámbialos si suben.
 const UNIT_PRICE = 6000;      // Slushie / granizado
 const BROWNIE_PRICE = 10000;  // Brownie con helado
+const COMBO_POP_PRICE = 5000; // Combo: crispetas + aguita de manzana
+const POP_PRICE = 2500;       // Crispetas solas
+const AGUA_PRICE = 2500;      // Aguita de manzana sola
+const PERRO_PRICE = 10000;    // Perro caliente + aguita de manzana
 
 // PIN para entrar a la app (candado de acceso, no seguridad real).
 // Cámbialo por el que quieran usar tú y la asistente. Puede ser de 4 a 6 dígitos.

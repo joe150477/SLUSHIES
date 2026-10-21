@@ -1,7 +1,7 @@
 {
-  "name": "Snacks",
-  "short_name": "Snacks",
-  "description": "Pedidos y entrega de granizados - New Academy School",
+  "name": "Munchies NAS · Tienda Escolar",
+  "short_name": "Munchies NAS",
+  "description": "Tienda escolar: slushies, brownies, crispetas y hot dogs - New Academy School",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0e2a52",
