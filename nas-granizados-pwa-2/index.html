@@ -350,9 +350,12 @@ button.action-item:active{transform:scale(0.98);}
 /* ---- Lock / PIN screen ---- */
 .lock{position:fixed; inset:0; z-index:3000; background:radial-gradient(circle at 50% 0%, var(--navy-light) 0%, var(--navy) 45%, var(--navy-deep) 100%); color:#fff; overflow:hidden;
   display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px max(24px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));}
-.lock::before{ content:""; position:absolute; left:0; right:0; top:0; height:12px;
-  background: repeating-linear-gradient(90deg, var(--red) 0 24px, #fff8e6 24px 48px); }
-.lock-logo{width:112px;height:112px; object-fit:contain; margin-bottom:14px; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.42));}
+.lock::before{ content:""; position:absolute; left:0; right:0; top:0; height:calc(58px + env(safe-area-inset-top)); z-index:2; pointer-events:none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='20'%3E%3Cpath d='M0 0H40A20 20 0 0 1 0 0Z' fill='%23C8292B'/%3E%3Cpath d='M40 0H80A20 20 0 0 1 40 0Z' fill='%23fff8e6'/%3E%3C/svg%3E") repeat-x left bottom / 80px 20px,
+    repeating-linear-gradient(90deg, #C8292B 0 40px, #fff8e6 40px 80px) left top / 100% calc(100% - 19px) no-repeat;
+  filter:drop-shadow(0 7px 8px rgba(0,0,0,.4)); }
+.lock-logo{width:min(62vw,240px);height:min(62vw,240px); object-fit:contain; margin-bottom:22px; filter:drop-shadow(0 6px 16px rgba(0,0,0,0.42));}
 .lock h2{font-size:28px; font-weight:900; margin:0;}
 .lock .lk-sub{font-size:15px; color:rgba(255,255,255,0.85); margin:6px 0 24px;}
 .pin-dots{display:flex; gap:16px; margin-bottom:26px; height:18px;}
@@ -417,7 +420,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '16';
+const APP_VERSION = '20';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -1243,7 +1246,20 @@ app.addEventListener('click', (e) => {
 // ============ LOCK / PIN ============
 const PIN_KEY = 'nas_granizados_pin_ok';
 function pinEnabled(){ return typeof APP_PIN !== 'undefined' && APP_PIN !== null && String(APP_PIN).length > 0; }
-function isUnlocked(){ return !pinEnabled() || localStorage.getItem(PIN_KEY) === String(APP_PIN); }
+// El dispositivo recuerda el PIN para siempre (localStorage + cookie de 5 años + almacenamiento persistente)
+function _pinCookie(){ return document.cookie.split('; ').some(c => c === PIN_KEY + '=' + encodeURIComponent(String(APP_PIN))); }
+function isUnlocked(){
+  if(!pinEnabled()) return true;
+  let ok = false;
+  try { ok = localStorage.getItem(PIN_KEY) === String(APP_PIN); } catch(e){}
+  if(!ok && _pinCookie()){ ok = true; try { localStorage.setItem(PIN_KEY, String(APP_PIN)); } catch(e){} }
+  return ok;
+}
+function rememberPin(){
+  try { localStorage.setItem(PIN_KEY, String(APP_PIN)); } catch(e){}
+  try { document.cookie = PIN_KEY + '=' + encodeURIComponent(String(APP_PIN)) + '; max-age=157680000; path=/; SameSite=Lax'; } catch(e){}
+  try { if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+}
 
 let _pinBuf = '';
 function renderLock(){
@@ -1258,8 +1274,6 @@ function renderLock(){
   lock.className = 'lock'; lock.id = 'lock';
   lock.innerHTML = `
     <img src="logo-munchies.png" class="lock-logo" alt="Munchies" onerror="this.style.display='none'">
-    <h2>Munchies NAS</h2>
-    <div class="lk-sub">Ingresa el PIN para continuar</div>
     <div class="pin-dots">${dots}</div>
     <div class="keypad">${keys}</div>
     <div class="lk-err" id="lk-err" role="alert"></div>
@@ -1278,7 +1292,7 @@ function pinPress(k){
   _pinBuf += k; pinUpdateDots();
   if(_pinBuf.length === String(APP_PIN).length){
     if(_pinBuf === String(APP_PIN)){
-      localStorage.setItem(PIN_KEY, String(APP_PIN));
+      rememberPin();
       lock.style.transition = 'opacity 0.25s'; lock.style.opacity = '0';
       setTimeout(() => { lock.remove(); boot(); }, 250);
     } else {
