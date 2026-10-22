@@ -388,6 +388,9 @@ button.action-item:active{transform:scale(0.98);}
 .prod-btn.active::after{content:"✓"; position:absolute; top:6px; right:8px; font-size:13px; font-weight:900; color:var(--gold-light);}
 .prod-btn{position:relative;}
 .person-course{font-size:10.5px; font-weight:800; color:var(--muted); margin-top:1px;}
+.grade-chip{flex:1 1 0; justify-content:center; padding:0 4px; font-size:15px;}
+.tab-row:has(.grade-chip){overflow-x:visible;}
+.search-note{grid-column:1/-1; font-size:12.5px; font-weight:700; color:var(--red); padding:2px 4px 6px;}
 </style>
 </head>
 <body>
@@ -421,7 +424,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '23';
+const APP_VERSION = '24';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -942,7 +945,7 @@ function setupProductSwitch(){
 // ============ MODAL: NEW ORDER ============
 function openNewOrderModal(){
   state.modal = { type:'new-order', step:1,
-    data:{ personType:'student', grade:'1st', personId:null, personName:null, qty:1, paid:false, search:'' } };
+    data:{ personType:'student', grade:'all', personId:null, personName:null, qty:1, paid:false, search:'' } };
   render();
 }
 function openOrderActions(orderId){ state.modal = { type:'order-actions', orderId }; render(); }
@@ -995,7 +998,8 @@ function renderNewOrderSheet(){
       </div>
       ${isStudent ? `
         <div class="tab-row">
-          ${GRADES.map(g => `<div class="tab-chip ${d.grade===g?'active':''}" data-act="set-grade" data-grade="${g}">${GRADE_LABELS[g]} grado</div>`).join('')}
+          <div class="tab-chip grade-chip ${d.grade==='all'?'active':''}" data-act="set-grade" data-grade="all">Todos</div>
+          ${GRADES.map(g => `<div class="tab-chip grade-chip ${d.grade===g?'active':''}" data-act="set-grade" data-grade="${g}">${GRADE_LABELS[g]}</div>`).join('')}
         </div>` : ''}
       <input type="text" class="search-input" id="person-search" placeholder="Buscar en todos los cursos..." value="${esc(d.search)}" autocomplete="off">
       <div class="person-grid" id="person-grid">${renderPersonGrid()}</div>`;
@@ -1067,20 +1071,24 @@ function renderPersonGrid(){
   const search = normTxt(d.search);
   const mkStu = (g) => (NAS_DATA.students[g] || []).map(s => ({id:s.id, name:s.name, type:'student', grade:g}));
   const mkTea = () => NAS_DATA.teachers.map(t => ({id:t.id, name:t.name, type:'teacher'}));
-  let pool;
-  if(search){            // con texto: busca en TODOS los cursos y docentes
-    pool = GRADES.flatMap(mkStu).concat(mkTea());
-    const words = search.split(/\s+/);
-    pool = pool.filter(p => { const n = normTxt(p.name); return words.every(w => n.includes(w)); });
-  } else {
-    pool = d.personType === 'student' ? mkStu(d.grade) : mkTea();
+  const everyone = () => GRADES.flatMap(mkStu).concat(mkTea());
+  const words = search ? search.split(/\s+/) : [];
+  const hit = (p) => { const n = normTxt(p.name); return words.every(w => n.includes(w)); };
+  const scoped = d.personType === 'teacher' ? mkTea() : (d.grade === 'all' ? everyone() : mkStu(d.grade));
+  let pool = search ? scoped.filter(hit) : scoped;
+  let note = '';
+  // Si no aparece en el curso marcado, busca automáticamente en TODOS
+  if(search && !pool.length && scoped.length !== everyone().length){
+    pool = everyone().filter(hit);
+    if(pool.length) note = `<div class="search-note">No está en ${d.personType==='teacher'?'Docentes':GRADE_LABELS[d.grade]}. Resultados de todos los cursos:</div>`;
   }
   if(!pool.length) return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados</p></div>`;
-  return pool.map(p => `
+  const showCourse = !!note || (d.personType==='student' && d.grade==='all');
+  return note + pool.map(p => `
     <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${esc(p.name)}" data-ptype="${p.type}" data-grade="${p.grade||''}">
       <div class="person-avatar">${initials(p.name)}</div>
       <div class="person-name">${esc(p.name)}</div>
-      ${search ? `<div class="person-course">${p.type==='teacher'?'Docente':GRADE_LABELS[p.grade]+' grado'}</div>` : ''}
+      ${showCourse ? `<div class="person-course">${p.type==='teacher'?'Docente':GRADE_LABELS[p.grade]}</div>` : ''}
     </div>`).join('');
 }
 
