@@ -387,6 +387,7 @@ button.action-item:active{transform:scale(0.98);}
 .prod-btn.active .prod-label::after{content:""; }
 .prod-btn.active::after{content:"✓"; position:absolute; top:6px; right:8px; font-size:13px; font-weight:900; color:var(--gold-light);}
 .prod-btn{position:relative;}
+.person-course{font-size:10.5px; font-weight:800; color:var(--muted); margin-top:1px;}
 </style>
 </head>
 <body>
@@ -420,7 +421,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '22';
+const APP_VERSION = '23';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -792,7 +793,16 @@ function renderListView(){
     done: scoped.filter(isDone).length,
   };
 
-  const rows = filtered.length ? filtered.map(orderCardDated).join('')
+  // Organizado por curso: 1° a 5° y Docentes; dentro de cada curso, lo más reciente primero
+  const courseKey = (o) => o.personType === 'teacher' ? 'teacher' : (o.grade || '?');
+  const courseOrder = GRADES.concat(['teacher','?']);
+  const rows = filtered.length ? courseOrder.map(k => {
+      const g = filtered.filter(o => courseKey(o) === k);
+      if(!g.length) return '';
+      const lbl = k==='teacher' ? 'Docentes' : (k==='?' ? 'Otros' : GRADE_LABELS[k] + ' grado');
+      const pend = g.filter(o=>!isDone(o)).length;
+      return `<div class="date-group-label">${lbl} <span class="pill">${g.length} pedido${g.length===1?'':'s'}${pend?` · ${pend} pendiente${pend===1?'':'s'}`:''}</span></div>${g.map(orderCardDated).join('')}`;
+    }).join('')
     : `<div class="empty-state"><div class="es-icon">${ICONS.list}</div><p>No hay pedidos aquí</p></div>`;
 
   const chip = (f,label) => `<div class="filter-chip ${state.listFilter===f?'active':''}" data-act="filter" data-f="${f}">${label}<span class="fc-n">${counts[f]}</span></div>`;
@@ -987,7 +997,7 @@ function renderNewOrderSheet(){
         <div class="tab-row">
           ${GRADES.map(g => `<div class="tab-chip ${d.grade===g?'active':''}" data-act="set-grade" data-grade="${g}">${GRADE_LABELS[g]} grado</div>`).join('')}
         </div>` : ''}
-      <input type="text" class="search-input" id="person-search" placeholder="Buscar nombre o apellido..." value="${esc(d.search)}" autocomplete="off">
+      <input type="text" class="search-input" id="person-search" placeholder="Buscar en todos los cursos..." value="${esc(d.search)}" autocomplete="off">
       <div class="person-grid" id="person-grid">${renderPersonGrid()}</div>`;
   } else if(step === 2){
     title = 'Cantidad';
@@ -1051,18 +1061,26 @@ function renderNewOrderSheet(){
   </div>`;
 }
 
+function normTxt(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 function renderPersonGrid(){
   const d = state.modal.data;
-  let pool = d.personType === 'student'
-    ? (NAS_DATA.students[d.grade] || []).map(s => ({id:s.id, name:s.name, type:'student'}))
-    : NAS_DATA.teachers.map(t => ({id:t.id, name:t.name, type:'teacher'}));
-  const search = (d.search||'').toLowerCase().trim();
-  if(search) pool = pool.filter(p => p.name.toLowerCase().includes(search));
+  const search = normTxt(d.search);
+  const mkStu = (g) => (NAS_DATA.students[g] || []).map(s => ({id:s.id, name:s.name, type:'student', grade:g}));
+  const mkTea = () => NAS_DATA.teachers.map(t => ({id:t.id, name:t.name, type:'teacher'}));
+  let pool;
+  if(search){            // con texto: busca en TODOS los cursos y docentes
+    pool = GRADES.flatMap(mkStu).concat(mkTea());
+    const words = search.split(/\s+/);
+    pool = pool.filter(p => { const n = normTxt(p.name); return words.every(w => n.includes(w)); });
+  } else {
+    pool = d.personType === 'student' ? mkStu(d.grade) : mkTea();
+  }
   if(!pool.length) return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados</p></div>`;
   return pool.map(p => `
-    <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${esc(p.name)}" data-ptype="${p.type}">
+    <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${esc(p.name)}" data-ptype="${p.type}" data-grade="${p.grade||''}">
       <div class="person-avatar">${initials(p.name)}</div>
       <div class="person-name">${esc(p.name)}</div>
+      ${search ? `<div class="person-course">${p.type==='teacher'?'Docente':GRADE_LABELS[p.grade]+' grado'}</div>` : ''}
     </div>`).join('');
 }
 
@@ -1211,7 +1229,7 @@ function handleAction(e){
     const d = state.modal.data; d.grade = el.dataset.grade; d.personId=null; d.personName=null; renderModal();
   }
   else if(act === 'select-person'){
-    const d = state.modal.data; d.personId = el.dataset.id; d.personName = el.dataset.name; d.personType = el.dataset.ptype; renderModal();
+    const d = state.modal.data; d.personId = el.dataset.id; d.personName = el.dataset.name; d.personType = el.dataset.ptype; if(el.dataset.grade) d.grade = el.dataset.grade; renderModal();
   }
   else if(act === 'qty-inc'){ state.modal.data.qty = Math.min(99, state.modal.data.qty+1); renderModal(); }
   else if(act === 'qty-dec'){ state.modal.data.qty = Math.max(1, state.modal.data.qty-1); renderModal(); }
