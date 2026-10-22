@@ -1,4 +1,4 @@
-const CACHE = 'nas-granizados-v24';
+const CACHE = 'nas-granizados-v26';
 const CORE = [
   './', './index.html', './data.js', './firebase-config.js', './manifest.json',
   './logo.png', './logo-munchies.png', './icons/galleta-192.png', './icons/galleta-512.png', './icons/galleta-180.png',
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (e) => {
   if (isCode) {
     // NETWORK-FIRST: online siempre trae la última versión; offline usa la copia.
     e.respondWith(
-      fetch(req).then((res) => {
+      fetch(req.mode === 'navigate' ? req.url : req, { cache: 'no-store' }).then((res) => {
         if (res && res.status === 200) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});

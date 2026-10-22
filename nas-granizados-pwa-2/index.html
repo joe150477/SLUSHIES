@@ -424,7 +424,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '24';
+const APP_VERSION = '26';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -1075,16 +1075,10 @@ function renderPersonGrid(){
   const words = search ? search.split(/\s+/) : [];
   const hit = (p) => { const n = normTxt(p.name); return words.every(w => n.includes(w)); };
   const scoped = d.personType === 'teacher' ? mkTea() : (d.grade === 'all' ? everyone() : mkStu(d.grade));
-  let pool = search ? scoped.filter(hit) : scoped;
-  let note = '';
-  // Si no aparece en el curso marcado, busca automáticamente en TODOS
-  if(search && !pool.length && scoped.length !== everyone().length){
-    pool = everyone().filter(hit);
-    if(pool.length) note = `<div class="search-note">No está en ${d.personType==='teacher'?'Docentes':GRADE_LABELS[d.grade]}. Resultados de todos los cursos:</div>`;
-  }
-  if(!pool.length) return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados</p></div>`;
-  const showCourse = !!note || (d.personType==='student' && d.grade==='all');
-  return note + pool.map(p => `
+  const pool = search ? scoped.filter(hit) : scoped;   // solo dentro del curso marcado (o en Todos)
+  if(!pool.length) return `<div class="empty-state" style="grid-column:1/-1;"><p>Sin resultados${d.personType==='student' && d.grade!=='all' ? ' en ' + GRADE_LABELS[d.grade] : ''}</p></div>`;
+  const showCourse = (d.personType==='student' && d.grade==='all');
+  return pool.map(p => `
     <div class="person-card ${p.type==='teacher'?'teacher':''} ${d.personId===p.id?'selected':''}" data-act="select-person" data-id="${p.id}" data-name="${esc(p.name)}" data-ptype="${p.type}" data-grade="${p.grade||''}">
       <div class="person-avatar">${initials(p.name)}</div>
       <div class="person-name">${esc(p.name)}</div>
@@ -1328,6 +1322,44 @@ function pinPress(k){
     }
   }
 }
+
+// ============ ACTUALIZACIÓN AUTOMÁTICA ============
+// Compara la versión de esta app con version.json (siempre sin caché). Si hay una nueva,
+// borra cachés y service worker y recarga sola. Se revisa al abrir, al volver a la app y cada 30 s.
+let _updBusy = false;
+async function checkForUpdate(){
+  if(_updBusy) return;
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if(!r.ok) return;
+    const remote = String((await r.json()).v || '');
+    if(!remote || remote === APP_VERSION) { try{ sessionStorage.removeItem('upd_try'); }catch(e){} return; }
+    if(state.modal) return;                       // no interrumpe un pedido a medias
+    let tries = 0; try { tries = parseInt(sessionStorage.getItem('upd_try')||'0',10); } catch(e){}
+    if(tries >= 3) return;                        // evita bucles si algo sigue en caché
+    try { sessionStorage.setItem('upd_try', String(tries+1)); } catch(e){}
+    _updBusy = true;
+    showUpdateToast('Actualizando a la versión ' + remote + '…');
+    try {
+      if('serviceWorker' in navigator){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g => g.unregister())); }
+      if(window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+    } catch(e){}
+    location.replace(location.pathname + '?v=' + remote + '&t=' + Date.now());
+  } catch(e){}
+}
+function showUpdateToast(msg){
+  let t = document.getElementById('upd-toast');
+  if(!t){ t = document.createElement('div'); t.id = 'upd-toast';
+    t.style.cssText = 'position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;background:#1B3A6B;color:#fff;font-weight:800;font-size:14px;padding:10px 18px;border-radius:22px;box-shadow:0 6px 18px rgba(0,0,0,.35);border:2px solid #F5C842;';
+    document.body.appendChild(t); }
+  t.textContent = msg;
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); });
+window.addEventListener('focus', checkForUpdate);
+window.addEventListener('pageshow', checkForUpdate);
+window.addEventListener('online', checkForUpdate);
+setInterval(checkForUpdate, 30000);
+checkForUpdate();
 
 // ============ INIT ============
 loadLocal();
