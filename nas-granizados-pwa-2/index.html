@@ -466,6 +466,8 @@ button.action-item:active{transform:scale(0.98);}
 .dv-course{width:auto; min-width:82px; text-align:center; padding:2px 8px; font-size:15px; flex-shrink:0;}
 .dv-pay{width:auto; min-width:72px; min-height:30px; padding:2px 8px; font-size:14px; flex-shrink:0;}
 .dv-chk{width:58px; height:58px; justify-self:end;}
+.dv-sinagua{display:inline-block; font-size:13px; font-weight:800; color:#7d5600; background:#FDECC8; border:1.5px solid #E5C77A; border-radius:10px; padding:2px 8px; line-height:1.2;}
+.dv-chips .dv-sinagua{flex-basis:100%; width:fit-content;}
 </style>
 </head>
 <body>
@@ -499,7 +501,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '35';
+const APP_VERSION = '36';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -572,10 +574,10 @@ function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : (GR
 const PRODUCTS = {
   slushie:   { label:'Slushies',            single:'Slushie',           price: UNIT_PRICE,        icon:'icons/slushie-flat.png', unit:'granizado',  unitP:'granizados' },
   brownie:   { label:'Brownies',            single:'Brownie',           price: BROWNIE_PRICE,     icon:'icons/brownie-flat.png', unit:'brownie',    unitP:'brownies' },
-  combo_pop: { label:'Combo Pop',           single:'Combo Pop',         price: COMBO_POP_PRICE,   emoji:'🍿', sub:'Crispetas + aguita', unit:'combo',   unitP:'combos' },
+  combo_pop: { aguaIncl:true, label:'Combo Pop',           single:'Combo Pop',         price: COMBO_POP_PRICE,   emoji:'🍿', sub:'Crispetas + aguita', unit:'combo',   unitP:'combos' },
   pop:       { label:'Crispetas',           single:'Crispetas',         price: POP_PRICE,         emoji:'🍿', unit:'crispetas',  unitP:'crispetas' },
   agua:      { label:'Aguita de manzana',   single:'Aguita de manzana', price: AGUA_PRICE,        emoji:'🍎', unit:'aguita',     unitP:'aguitas' },
-  perro:     { label:'Hot Dogs',            single:'Hot Dog americano',    price: PERRO_PRICE,       emoji:'🌭', sub:'americano + aguita de manzana', unit:'perro', unitP:'perros' },
+  perro:     { aguaIncl:true, label:'Hot Dogs',            single:'Hot Dog americano',    price: PERRO_PRICE,       emoji:'🌭', sub:'americano + aguita de manzana', unit:'perro', unitP:'perros' },
 };
 // Íconos de producto propios (SVG plano, colores de marca)
 const PROD_SVG = {
@@ -592,7 +594,9 @@ function unitPlural(){ return PRODUCTS[state.activeProduct].unitP; }
 function unitFor(n){ return n===1 ? unitName() : unitPlural(); }
 function isProd(o){ return (o.product||'slushie') === state.activeProduct; }   // producto activo
 function priceOf(o){ return (PRODUCTS[o.product||'slushie']||PRODUCTS.slushie).price; }
-function orderTotal(o){ return o.qty * priceOf(o); }
+// Si se acabaron las aguitas, a esa unidad solo se le cobra el producto (se descuenta el valor de la aguita)
+function sinAguaOf(o){ const d = PRODUCTS[o.product||'slushie']; return (d && d.aguaIncl) ? Math.max(0, Math.min(o.qty, o.sinAgua||0)) : 0; }
+function orderTotal(o){ return o.qty * priceOf(o) - sinAguaOf(o) * AGUA_PRICE; }
 function activePrice(){ return PRODUCTS[state.activeProduct].price; }
 
 const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -755,7 +759,7 @@ function orderCardHtml(o){
       <div class="order-avatar ${o.personType==='teacher'?'teacher':''}">${initials(o.personName)}</div>
       <div class="order-info">
         <div class="order-name">${esc(o.personName)}</div>
-        <div class="order-meta">${personTypeLabel(o)} <span class="qty-badge">×${o.qty}</span></div>
+        <div class="order-meta">${personTypeLabel(o)} <span class="qty-badge">×${o.qty}</span>${sinAguaOf(o)>0?` <span class="dv-sinagua">Sin aguita${o.qty>1?' ×'+sinAguaOf(o):''} · ${formatCOP(orderTotal(o))}</span>`:''}</div>
       </div>
       <div class="order-right">
         ${payChip(o)}${delChip(o)}
@@ -770,7 +774,7 @@ function dvRow(o){
       <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
-        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button></div>
+        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>${sinAguaOf(o)>0?`<span class="dv-sinagua">Sin aguita${o.qty>1?' ×'+sinAguaOf(o):''} · ${formatCOP(orderTotal(o))}</span>`:''}</div>
       </div>
       <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
     </div>`;
@@ -1222,6 +1226,15 @@ function renderOrderActionsSheet(){
             <button data-act="edit-qty" data-id="${o.id}" data-delta="1" aria-label="Agregar una unidad">+</button>
           </div>
         </div>
+        ${(PRODUCTS[o.product||'slushie']||{}).aguaIncl ? `
+        <div class="action-item sinagua">
+          <span style="font-size:22px;line-height:1">🍎</span><span>Sin aguita (se acabó)<small style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px;">${sinAguaOf(o)>0 ? 'Cobrar ' + formatCOP(orderTotal(o)) + ' · descuento ' + formatCOP(sinAguaOf(o)*AGUA_PRICE) : 'Cobrar ' + formatCOP(orderTotal(o)) + ' (completo)'}</small></span>
+          <div class="mini-stepper">
+            <button data-act="edit-sinagua" data-id="${o.id}" data-delta="-1" aria-label="Una unidad menos sin aguita">−</button>
+            <span class="mv">${sinAguaOf(o)}</span>
+            <button data-act="edit-sinagua" data-id="${o.id}" data-delta="1" aria-label="Una unidad más sin aguita">+</button>
+          </div>
+        </div>` : ''}
         <button class="action-item ${o.paid?'':'green'}" data-act="toggle-paid" data-id="${o.id}">
           ${o.paid ? ICONS.undo : ICONS.money}
           <span>${o.paid ? 'Marcar como no pagado (debe)' : 'Confirmar pago'}</span>
@@ -1322,10 +1335,16 @@ function handleAction(e){
     upsertOrder(o);
     showToast(o.paid ? 'Pago confirmado ✓' : 'Marcado como debe', o.paid?ICONS.money:ICONS.clock);
   }
+  else if(act === 'edit-sinagua'){
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.sinAgua = Math.max(0, Math.min(o.qty, sinAguaOf(o) + parseInt(el.dataset.delta, 10)));
+    upsertOrder(o);
+    openOrderActions(o.id);
+  }
   else if(act === 'edit-qty'){
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
     const delta = parseInt(el.dataset.delta, 10);
-    o.qty = Math.max(1, Math.min(99, o.qty + delta));
+    o.qty = Math.max(1, Math.min(99, o.qty + delta)); if(o.sinAgua > o.qty) o.sinAgua = o.qty;
     upsertOrder(o); // vuelve a renderizar; reabrimos la hoja para reflejar el cambio
     openOrderActions(o.id);
   }
