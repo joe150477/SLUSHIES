@@ -424,6 +424,18 @@ button.action-item:active{transform:scale(0.98);}
 .dv-pay{min-height:40px; padding:6px 12px; border-radius:12px; font-size:15px; font-weight:900; border:2px solid transparent;}
 .dv-pay.debe{background:#FBE0E0; color:#9c1d1f; border-color:#E8A9A9;}
 .dv-pay.paid{background:#DDF1E3; color:#1d6b3a; border-color:#A7D6B5;}
+/* Fila por niño: imagen del producto a la izquierda, check al final */
+.dv-row{gap:10px; padding:10px 10px 10px 8px;}
+.dv-prod{position:relative; flex-shrink:0; width:76px; height:76px;}
+.dv-prod .prod-ico{width:76px; height:76px; background:#FFF3D6; border:2px solid #F0D9A0;}
+.dv-prod .prod-ico img,.dv-prod .prod-ico svg{width:60px; height:60px;}
+.dv-qtyb{position:absolute; right:-6px; top:-6px; min-width:30px; height:30px; padding:0 6px; border-radius:15px; background:var(--navy); color:#fff; font-size:16px; font-weight:900; display:flex; align-items:center; justify-content:center; border:2px solid #fff;}
+.dv-qtyb.multi{background:var(--red); font-size:19px; min-width:34px; height:34px; border-radius:17px;}
+.dv-chips{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:5px;}
+.dv-course{font-size:16px; margin-top:0; padding:1px 9px;}
+.dv-pay{min-height:32px; padding:3px 10px; font-size:14px; border-radius:10px;}
+.dv-chk{width:58px; height:58px; border-radius:16px;}
+.dv-name{font-size:23px;}
 </style>
 </head>
 <body>
@@ -457,7 +469,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '30';
+const APP_VERSION = '31';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -722,41 +734,28 @@ function orderCardHtml(o){
 }
 function dvRow(o){
   const course = o.personType==='teacher' ? 'Docente' : GRADE_LABELS[o.grade] + ' grado';
+  const pr = PRODUCTS[o.product||'slushie'] || PRODUCTS.slushie;
   return `
     <div class="dv-row ${accClass(o)} ${o.delivered?'is-delivered':''}">
-      <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
+      <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
-        <div class="dv-course">${course}</div>
+        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button></div>
       </div>
-      <div class="dv-right">
-        <div class="dv-qty">×${o.qty}</div>
-        <button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>
-      </div>
+      <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
     </div>`;
 }
-// Grupos por producto con letra grande (los que tienen pendientes van primero)
-function dvGroups(all){
-  const DV_ORDER = ['perro','combo_pop','pop','agua','brownie','slushie'];   // lo que más se vende primero
-  const blocks = DV_ORDER.filter(p => PRODUCTS[p]).map(p => {
-    const list = all.filter(o => (o.product||'slushie') === p)
-      .sort((a,b)=> (a.delivered?1:0)-(b.delivered?1:0) || (a.createdAt||0)-(b.createdAt||0));
-    if(!list.length) return null;
-    const d = PRODUCTS[p];
-    const pend = list.filter(o=>!o.delivered).length;
-    const qtyPend = list.filter(o=>!o.delivered).reduce((t,o)=>t+o.qty,0);
-    return { pend, html: `
-    <div class="dv-group">
-      <div class="dv-ghead">
-        ${prodIcon(p)}
-        <div class="dv-gname">${d.label}${d.sub?`<span>${d.sub}</span>`:''}</div>
-        <div class="dv-gcount ${pend?'':'ok'}">${pend ? qtyPend + ' por entregar' : '✓ Todo entregado'}</div>
-      </div>
-      ${list.map(dvRow).join('')}
-    </div>` };
-  }).filter(Boolean);
-  blocks.sort((a,b)=> (a.pend?0:1)-(b.pend?0:1));
-  return blocks.map(b=>b.html).join('');
+// Un solo listado ordenado por niño (sus pedidos juntos); pendientes primero, entregados abajo
+function dvList(all){
+  const PR = ['perro','combo_pop','pop','agua','brownie','slushie'];
+  const first = {};
+  all.forEach(o => { const k = o.personId || o.personName; const t = o.createdAt||0; if(!(k in first) || t < first[k]) first[k] = t; });
+  const sorted = all.slice().sort((a,b)=>
+    (a.delivered?1:0)-(b.delivered?1:0) ||
+    first[a.personId||a.personName] - first[b.personId||b.personName] ||
+    String(a.personId||a.personName).localeCompare(String(b.personId||b.personName)) ||
+    PR.indexOf(a.product||'slushie') - PR.indexOf(b.product||'slushie'));
+  return sorted.map(dvRow).join('');
 }
 function renderDayView(){
   const dk = state.selectedDate;
@@ -767,7 +766,7 @@ function renderDayView(){
   const totalPend = all.filter(o=>!o.delivered).length;
   const totalDone = all.length - totalPend;
 
-  const groups = dvGroups(all);
+  const groups = dvList(all);
 
   const picker = state.pickProduct ? `
     <div class="dv-picker">${Object.keys(PRODUCTS).map(p => `
@@ -820,10 +819,10 @@ function renderDeliverView(){
       const dObj = new Date(dk + 'T00:00:00');
       const lbl = dk===tk ? 'Hoy' : dObj.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'short'});
       const pend = byDate[dk].filter(o=>!o.delivered).length;
-      return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${dvGroups(byDate[dk])}`;
+      return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${dvList(byDate[dk])}`;
     }).join('');
   } else {
-    content = dvGroups(q);
+    content = dvList(q);
   }
 
   return `
