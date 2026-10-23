@@ -448,6 +448,24 @@ button.action-item:active{transform:scale(0.98);}
 .dv-side{display:flex; flex-direction:column; align-items:center; gap:14px; width:78px;}
 .dv-side .dv-chk{width:60px; height:60px;}
 .dv-side .dv-pay{width:78px; min-height:36px; font-size:15px; padding:4px 0;}
+/* v35: compacto — más filas en una sola mirada (imagen del producto igual de grande) */
+.dv{padding:4px 12px 110px;}
+.dv .day-header{margin:0;}
+.dv .back-btn{padding:4px 2px; font-size:14px; min-height:30px;}
+.dv-title{font-size:24px; margin:0 2px 6px;}
+.dv-summary{gap:8px; margin-bottom:8px;}
+.dv-sum{padding:4px 12px; border-radius:14px;}
+.dv-sum b{font-size:26px;}
+.dv-sum span{font-size:14px;}
+.dv .add-order-btn{min-height:46px; font-size:17px; margin:0 0 4px;}
+.dv .deliver-toggle{margin:0 0 6px;}
+.dv .deliver-toggle .filter-chip{min-height:36px; padding:4px 14px;}
+.dv-row{grid-template-columns:76px minmax(0,1fr) 58px; column-gap:12px; padding:8px 10px 8px 8px; margin-top:5px;}
+.dv-name{font-size:22px; line-height:1.12;}
+.dv-chips{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px;}
+.dv-course{width:auto; min-width:82px; text-align:center; padding:2px 8px; font-size:15px; flex-shrink:0;}
+.dv-pay{width:auto; min-width:72px; min-height:30px; padding:2px 8px; font-size:14px; flex-shrink:0;}
+.dv-chk{width:58px; height:58px; justify-self:end;}
 </style>
 </head>
 <body>
@@ -481,7 +499,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '34';
+const APP_VERSION = '35';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -745,19 +763,16 @@ function orderCardHtml(o){
     </div>`;
 }
 function dvRow(o){
-  const course = o.personType==='teacher' ? 'Docente' : GRADE_LABELS[o.grade] + ' grado';
+  const course = o.personType==='teacher' ? 'Docente' : GRADE_LABELS[o.grade];
   const pr = PRODUCTS[o.product||'slushie'] || PRODUCTS.slushie;
   return `
     <div class="dv-row ${accClass(o)} ${o.delivered?'is-delivered':''}">
       <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
-        <div class="dv-chips"><span class="dv-course">${course}</span></div>
+        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button></div>
       </div>
-      <div class="dv-side">
       <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
-      <button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>
-      </div>
     </div>`;
 }
 // Un solo listado ordenado por niño (sus pedidos juntos); pendientes primero, entregados abajo
