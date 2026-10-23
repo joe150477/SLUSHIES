@@ -438,7 +438,16 @@ button.action-item:active{transform:scale(0.98);}
 .dv-name{font-size:23px;}
 .dv-chips{flex-wrap:nowrap; gap:6px;}
 .dv-course{width:92px; text-align:center; padding:1px 0; white-space:nowrap; flex-shrink:0;}
-.dv-pay{width:84px; text-align:center; padding:3px 0; flex-shrink:0;}
+.dv-pay{width:100%; text-align:center; padding:3px 0; flex-shrink:0;}
+/* v34: fila en 3 columnas: producto | niño+curso | columna derecha (check arriba, Pagado/Debe debajo, 14px de aire) */
+.dv-row{display:grid; grid-template-columns:76px minmax(0,1fr) 78px; align-items:center; column-gap:12px; padding:12px 10px 12px 8px;}
+.dv-info{min-width:0;}
+.dv-name{font-size:22px; line-height:1.15;}
+.dv-chips{margin-top:8px;}
+.dv-course{width:auto; padding:2px 10px; font-size:16px;}
+.dv-side{display:flex; flex-direction:column; align-items:center; gap:14px; width:78px;}
+.dv-side .dv-chk{width:60px; height:60px;}
+.dv-side .dv-pay{width:78px; min-height:36px; font-size:15px; padding:4px 0;}
 </style>
 </head>
 <body>
@@ -472,7 +481,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '32';
+const APP_VERSION = '34';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -743,9 +752,12 @@ function dvRow(o){
       <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
-        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button></div>
+        <div class="dv-chips"><span class="dv-course">${course}</span></div>
       </div>
+      <div class="dv-side">
       <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
+      <button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>
+      </div>
     </div>`;
 }
 // Un solo listado ordenado por niño (sus pedidos juntos); pendientes primero, entregados abajo
@@ -1434,11 +1446,64 @@ function showUpdateToast(msg){
     document.body.appendChild(t); }
   t.textContent = msg;
 }
+// ---- Jalar hacia abajo para actualizar (como en otras apps) ----
+async function forceRefresh(){
+  _updBusy = true;
+  showUpdateToast('Actualizando…');
+  try {
+    if('serviceWorker' in navigator){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g => g.unregister())); }
+    if(window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+  } catch(e){}
+  location.replace(location.pathname + '?r=' + Date.now());
+}
+(function setupPullToRefresh(){
+  const TRIGGER = 70;                          // píxeles que hay que jalar para activar
+  let startY = null, dy = 0, active = false;
+  const ind = document.createElement('div');
+  ind.id = 'ptr';
+  ind.style.cssText = 'position:fixed;left:50%;top:0;z-index:99998;width:46px;height:46px;margin-left:-23px;border-radius:50%;background:#1B3A6B;color:#F5C842;border:2px solid #F5C842;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.35);transform:translateY(-70px);opacity:0;pointer-events:none;transition:none;';
+  ind.textContent = '↓';
+  document.addEventListener('DOMContentLoaded', () => document.body.appendChild(ind));
+  if(document.body) document.body.appendChild(ind);
+  const topY = () => (window.scrollY || document.documentElement.scrollTop || 0);
+  const blocked = () => !!(state && state.modal) || !!document.getElementById('lock');
+  document.addEventListener('touchstart', (e) => {
+    if(e.touches.length !== 1 || topY() > 0 || blocked() || _updBusy){ startY = null; return; }
+    startY = e.touches[0].clientY; dy = 0; active = false;
+  }, {passive:true});
+  document.addEventListener('touchmove', (e) => {
+    if(startY === null) return;
+    dy = e.touches[0].clientY - startY;
+    if(dy > 6 && topY() <= 0){
+      active = true;
+      if(e.cancelable) e.preventDefault();      // evita el rebote nativo mientras se jala
+      const pull = Math.min(dy * 0.55, 90);
+      ind.style.transition = 'none';
+      ind.style.opacity = String(Math.min(pull / 40, 1));
+      ind.style.transform = 'translateY(' + (pull - 10 + 12) + 'px) rotate(' + (dy > TRIGGER*1.6 ? 180 : 0) + 'deg)';
+      ind.textContent = dy > TRIGGER*1.6 ? '↑' : '↓';
+    } else if(active && dy <= 0){ active = false; ind.style.opacity = '0'; }
+  }, {passive:false});
+  document.addEventListener('touchend', () => {
+    if(startY === null) return;
+    const go = active && dy > TRIGGER*1.6;
+    startY = null;
+    if(go){
+      ind.style.transition = 'transform .15s'; ind.style.transform = 'translateY(54px)'; ind.style.opacity = '1'; ind.textContent = '⟳';
+      ind.animate([{rotate:'0deg'},{rotate:'360deg'}], {duration:700, iterations:Infinity});
+      forceRefresh();
+    } else {
+      ind.style.transition = 'transform .2s, opacity .2s'; ind.style.transform = 'translateY(-70px)'; ind.style.opacity = '0';
+    }
+    active = false;
+  }, {passive:true});
+})();
+
 document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); });
 window.addEventListener('focus', checkForUpdate);
 window.addEventListener('pageshow', checkForUpdate);
 window.addEventListener('online', checkForUpdate);
-setInterval(checkForUpdate, 30000);
+setInterval(checkForUpdate, 20000);
 checkForUpdate();
 
 // ============ INIT ============
