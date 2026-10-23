@@ -391,6 +391,39 @@ button.action-item:active{transform:scale(0.98);}
 .grade-chip{flex:1 1 0; justify-content:center; padding:0 4px; font-size:15px;}
 .tab-row:has(.grade-chip){overflow-x:visible;}
 .search-note{grid-column:1/-1; font-size:12.5px; font-weight:700; color:var(--red); padding:2px 4px 6px;}
+/* ---- Vista del día: letra grande para ver a quién entregar ---- */
+.dv{padding:8px 14px 120px;}
+.dv-title{font-size:30px; font-weight:900; color:var(--title); text-transform:capitalize; line-height:1.1; margin:6px 2px 12px;}
+.dv-summary{display:flex; gap:10px; margin-bottom:12px;}
+.dv-sum{flex:1; border-radius:18px; padding:10px 12px; display:flex; align-items:baseline; gap:8px; font-weight:800;}
+.dv-sum b{font-size:40px; line-height:1;}
+.dv-sum span{font-size:15px;}
+.dv-sum.pend{background:#FDECC8; color:#7d5600;}
+.dv-sum.done{background:#DDF1E3; color:#1d6b3a;}
+.dv .add-order-btn{min-height:54px; font-size:18px;}
+.dv-picker{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0 4px;}
+.dv-pick{display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 4px; min-height:92px; border-radius:16px; border:2px solid var(--line); background:var(--surface); font-size:14px; font-weight:800; color:var(--title);}
+.dv-group{margin-top:18px;}
+.dv-ghead{display:flex; align-items:center; gap:10px; background:var(--navy); color:#fff; border-radius:18px 18px 6px 6px; padding:10px 12px;}
+.dv-ghead .prod-ico{background:#fff; width:48px; height:48px;}
+.dv-gname{flex:1; min-width:0; font-size:22px; font-weight:900; line-height:1.1;}
+.dv-gname span{display:block; font-size:13px; font-weight:600; opacity:.85; margin-top:2px;}
+.dv-gcount{font-size:15px; font-weight:900; color:var(--gold-light); text-align:right; line-height:1.15; max-width:96px;}
+.dv-gcount.ok{color:#9be3b3;}
+.dv-row{display:flex; align-items:center; gap:12px; background:var(--surface); border-left:8px solid #E5A93A; border-radius:8px; padding:12px 10px 12px 10px; margin-top:6px; box-shadow:var(--shadow-sm);}
+.dv-row.acc-debe{border-left-color:var(--red);} .dv-row.acc-done{border-left-color:var(--green);}
+.dv-row.is-delivered{opacity:.55;}
+.dv-chk{width:64px; height:64px; flex-shrink:0; border-radius:18px; border:3px solid var(--navy-light); background:var(--surface); color:transparent; display:flex; align-items:center; justify-content:center; padding:0;}
+.dv-chk svg{width:38px; height:38px;}
+.dv-chk.on{background:var(--green); border-color:var(--green); color:#fff;}
+.dv-info{flex:1; min-width:0;}
+.dv-name{font-size:24px; font-weight:900; line-height:1.12; color:var(--title); overflow-wrap:anywhere;}
+.dv-course{display:inline-block; margin-top:4px; font-size:18px; font-weight:800; color:var(--navy); background:#E7EEF9; border-radius:10px; padding:1px 10px;}
+.dv-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;}
+.dv-qty{font-size:30px; font-weight:900; color:var(--title); line-height:1;}
+.dv-pay{min-height:40px; padding:6px 12px; border-radius:12px; font-size:15px; font-weight:900; border:2px solid transparent;}
+.dv-pay.debe{background:#FBE0E0; color:#9c1d1f; border-color:#E8A9A9;}
+.dv-pay.paid{background:#DDF1E3; color:#1d6b3a; border-color:#A7D6B5;}
 </style>
 </head>
 <body>
@@ -424,7 +457,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '26';
+const APP_VERSION = '30';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -562,12 +595,13 @@ let state = {
   statsYear: new Date().getFullYear(),
   statsMonth: new Date().getMonth(),
   activeProduct: 'slushie',
+  pickProduct: false,
 };
 
 const app = document.getElementById('app');
 (function(){ const t=document.createElement('div'); t.id='ver-tag'; t.textContent='v'+APP_VERSION; document.body.appendChild(t); })();
 
-function ordersForDate(dk){ return orders.filter(o => o.date === dk && isProd(o)); }
+function ordersForDate(dk){ return orders.filter(o => o.date === dk); }   // todos los productos
 function dayStats(dk){
   const list = ordersForDate(dk);
   return {
@@ -579,8 +613,8 @@ function dayStats(dk){
   };
 }
 // Por entregar = todo lo que aún no se ha entregado (aunque no esté pagado)
-function pendingDelivery(){ return orders.filter(o => !o.delivered && isProd(o)); }
-function pendingDeliveryToday(){ const tk=todayKey(); return orders.filter(o => !o.delivered && o.date===tk && isProd(o)); }
+function pendingDelivery(){ return orders.filter(o => !o.delivered); }
+function pendingDeliveryToday(){ const tk=todayKey(); return orders.filter(o => !o.delivered && o.date===tk); }
 
 // ============ RENDER: SYNC BANNER ============
 function renderSyncBanner(){
@@ -593,7 +627,7 @@ function renderSyncBanner(){
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
   const porEntregar = pendingDeliveryToday().length;
-  const porCobrar = orders.filter(o=>!o.paid && isProd(o)).reduce((s,o)=>s+orderTotal(o),0);
+  const porCobrar = orders.filter(o=>!o.paid).reduce((s,o)=>s+orderTotal(o),0);
 
   return `
   <div class="topbar">
@@ -608,7 +642,7 @@ function renderTopbar(){
       <div class="sync-pill ${cloudOn?'':'local'}"><span class="dot-live"></span>${cloudOn?'En línea':'Local'}</div>
     </div>
     <div class="summary-row">
-      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">${PRODUCTS[state.activeProduct].label} hoy</div></div>
+      <div class="summary-card"><div class="num">${totalToday}</div><div class="lbl">Pedidos hoy</div></div>
       <div class="summary-card"><div class="num">${porEntregar}</div><div class="lbl">Por entregar</div></div>
       <div class="summary-card"><div class="num small">${formatCOP(porCobrar)}</div><div class="lbl">Por cobrar</div></div>
     </div>
@@ -686,29 +720,72 @@ function orderCardHtml(o){
       </div>
     </div>`;
 }
+function dvRow(o){
+  const course = o.personType==='teacher' ? 'Docente' : GRADE_LABELS[o.grade] + ' grado';
+  return `
+    <div class="dv-row ${accClass(o)} ${o.delivered?'is-delivered':''}">
+      <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
+      <div class="dv-info" data-act="open-order" data-id="${o.id}">
+        <div class="dv-name">${esc(o.personName)}</div>
+        <div class="dv-course">${course}</div>
+      </div>
+      <div class="dv-right">
+        <div class="dv-qty">×${o.qty}</div>
+        <button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>
+      </div>
+    </div>`;
+}
+// Grupos por producto con letra grande (los que tienen pendientes van primero)
+function dvGroups(all){
+  const DV_ORDER = ['perro','combo_pop','pop','agua','brownie','slushie'];   // lo que más se vende primero
+  const blocks = DV_ORDER.filter(p => PRODUCTS[p]).map(p => {
+    const list = all.filter(o => (o.product||'slushie') === p)
+      .sort((a,b)=> (a.delivered?1:0)-(b.delivered?1:0) || (a.createdAt||0)-(b.createdAt||0));
+    if(!list.length) return null;
+    const d = PRODUCTS[p];
+    const pend = list.filter(o=>!o.delivered).length;
+    const qtyPend = list.filter(o=>!o.delivered).reduce((t,o)=>t+o.qty,0);
+    return { pend, html: `
+    <div class="dv-group">
+      <div class="dv-ghead">
+        ${prodIcon(p)}
+        <div class="dv-gname">${d.label}${d.sub?`<span>${d.sub}</span>`:''}</div>
+        <div class="dv-gcount ${pend?'':'ok'}">${pend ? qtyPend + ' por entregar' : '✓ Todo entregado'}</div>
+      </div>
+      ${list.map(dvRow).join('')}
+    </div>` };
+  }).filter(Boolean);
+  blocks.sort((a,b)=> (a.pend?0:1)-(b.pend?0:1));
+  return blocks.map(b=>b.html).join('');
+}
 function renderDayView(){
   const dk = state.selectedDate;
   if(!dk) return '';
   const dateObj = new Date(dk + 'T00:00:00');
   const dayLabel = dateObj.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
-  const list = ordersForDate(dk).slice().sort((a,b)=>
-    (a.delivered?1:0)-(b.delivered?1:0) || (b.createdAt||0)-(a.createdAt||0));
-  const st = dayStats(dk);
+  const all = orders.filter(o => o.date === dk);
+  const totalPend = all.filter(o=>!o.delivered).length;
+  const totalDone = all.length - totalPend;
 
-  const cards = list.length ? list.map(orderCardHtml).join('') : `
-    <div class="empty-state"><div class="es-icon">${ICONS.cone}</div>
-      <p>Aún no hay pedidos este día</p><div class="es-sub">Toca “Agregar pedido” y registra el primero. ¡El recreo se acerca!</div></div>`;
+  const groups = dvGroups(all);
+
+  const picker = state.pickProduct ? `
+    <div class="dv-picker">${Object.keys(PRODUCTS).map(p => `
+      <button class="dv-pick" data-act="add-for-product" data-p="${p}">${prodIcon(p)}<span>${p==='agua'?'Aguita':PRODUCTS[p].label}</span></button>`).join('')}
+    </div>` : '';
 
   return `
-  <div class="day-view">
-    <div class="day-header">
-      <button class="back-btn" data-act="back-to-cal">${ICONS.back} Calendario</button>
+  <div class="day-view dv">
+    <div class="day-header"><button class="back-btn" data-act="back-to-cal">${ICONS.back} Calendario</button></div>
+    <div class="dv-title">${dayLabel}</div>
+    <div class="dv-summary">
+      <div class="dv-sum pend"><b>${totalPend}</b><span>por entregar</span></div>
+      <div class="dv-sum done"><b>${totalDone}</b><span>entregados</span></div>
     </div>
-    <div class="day-title">${dayLabel}</div>
-    <div style="height:14px"></div>
-    <button class="add-order-btn" data-act="new-order">${ICONS.plus} Agregar pedido</button>
-    <div class="section-label">Pedidos del día · ${list.length} ${st.count?`&nbsp;·&nbsp; ${st.totalQty} ${unitPlural()}`:''}</div>
-    ${cards}
+    <button class="add-order-btn" data-act="toggle-pick">${ICONS.plus} ${state.pickProduct?'Elige qué se pidió':'Agregar pedido'}</button>
+    ${picker}
+    ${all.length ? groups : `<div class="empty-state"><div class="es-icon">${ICONS.cone}</div>
+      <p>Aún no hay pedidos este día</p><div class="es-sub">Toca “Agregar pedido” y registra el primero.</div></div>`}
   </div>`;
 }
 
@@ -726,11 +803,8 @@ function deliverRow(o){
 }
 function renderDeliverView(){
   const tk = todayKey();
-  let q = orders.filter(isProd);
+  let q = orders.slice();                      // TODOS los productos juntos
   if(state.deliverScope === 'today') q = q.filter(o => o.date === tk);
-  // no entregados primero (por orden de registro), entregados abajo
-  q.sort((a,b)=> (a.delivered?1:0)-(b.delivered?1:0) || a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0));
-
   const porEntregar = q.filter(o=>!o.delivered).length;
   const entregados = q.filter(o=>o.delivered).length;
 
@@ -740,27 +814,29 @@ function renderDeliverView(){
       <p>${state.deliverScope==='today'?'No hay pedidos hoy':'No hay pedidos'}</p>
       <div class="es-sub">Los pedidos que registre la asistente aparecen aquí para entregar.</div></div>`;
   } else if(state.deliverScope === 'all'){
-    const groups = {};
-    q.forEach(o => { (groups[o.date] = groups[o.date] || []).push(o); });
-    content = Object.keys(groups).sort().map(dk => {
+    const byDate = {};
+    q.forEach(o => { (byDate[o.date] = byDate[o.date] || []).push(o); });
+    content = Object.keys(byDate).sort().reverse().map(dk => {
       const dObj = new Date(dk + 'T00:00:00');
       const lbl = dk===tk ? 'Hoy' : dObj.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'short'});
-      const pend = groups[dk].filter(o=>!o.delivered).length;
-      return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${groups[dk].map(deliverRow).join('')}`;
+      const pend = byDate[dk].filter(o=>!o.delivered).length;
+      return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${dvGroups(byDate[dk])}`;
     }).join('');
   } else {
-    content = q.map(deliverRow).join('');
+    content = dvGroups(q);
   }
 
   return `
-  <div class="day-view">
-    <div class="view-title">Entregar</div>
-    <div class="deliver-hint">Marca la casilla ✓ cuando le des el ${unitName()} (aunque aún deba). Toca <b>Debe</b> cuando el papá pague.</div>
+  <div class="day-view dv">
+    <div class="dv-title">Entregar</div>
     <div class="deliver-toggle">
       <div class="filter-chip ${state.deliverScope==='today'?'active':''}" data-act="deliver-scope" data-s="today">Hoy</div>
       <div class="filter-chip ${state.deliverScope==='all'?'active':''}" data-act="deliver-scope" data-s="all">Todos</div>
     </div>
-    ${q.length?`<div class="deliver-counts"><span>${porEntregar} por entregar</span><span>${entregados} entregados</span></div>`:''}
+    <div class="dv-summary">
+      <div class="dv-sum pend"><b>${porEntregar}</b><span>por entregar</span></div>
+      <div class="dv-sum done"><b>${entregados}</b><span>entregados</span></div>
+    </div>
     ${content}
   </div>`;
 }
@@ -910,7 +986,7 @@ function render(){
   app.innerHTML = `
     ${renderSyncBanner()}
     ${showTopbar ? renderTopbar() : ''}
-    ${renderProductSwitch()}
+    ${(state.view==='day' || state.view==='deliver' || state.view==='calendar') ? '' : renderProductSwitch()}
     ${body}
     ${renderBottomNav()}
   `;
@@ -1172,8 +1248,10 @@ function handleAction(e){
   if(act === 'nav'){ state.view = el.dataset.view; render(); }
   else if(act === 'prev-month'){ state.calMonth--; if(state.calMonth<0){state.calMonth=11; state.calYear--;} render(); }
   else if(act === 'next-month'){ state.calMonth++; if(state.calMonth>11){state.calMonth=0; state.calYear++;} render(); }
-  else if(act === 'back-to-cal'){ state.view = 'calendar'; render(); }
+  else if(act === 'back-to-cal'){ state.view = 'calendar'; state.pickProduct = false; render(); }
   else if(act === 'new-order'){ openNewOrderModal(); }
+  else if(act === 'toggle-pick'){ state.pickProduct = !state.pickProduct; render(); }
+  else if(act === 'add-for-product'){ state.activeProduct = el.dataset.p; state.pickProduct = false; openNewOrderModal(); }
   else if(act === 'close-modal'){ closeModal(); }
   else if(act === 'filter'){ state.listFilter = el.dataset.f; render(); }
   else if(act === 'set-product'){ state.activeProduct = el.dataset.p; render(); }
