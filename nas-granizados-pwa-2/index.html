@@ -436,6 +436,9 @@ button.action-item:active{transform:scale(0.98);}
 .dv-pay{min-height:32px; padding:3px 10px; font-size:14px; border-radius:10px;}
 .dv-chk{width:58px; height:58px; border-radius:16px;}
 .dv-name{font-size:23px;}
+.dv-chips{flex-wrap:nowrap; gap:6px;}
+.dv-course{width:92px; text-align:center; padding:1px 0; white-space:nowrap; flex-shrink:0;}
+.dv-pay{width:84px; text-align:center; padding:3px 0; flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -469,7 +472,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '31';
+const APP_VERSION = '32';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
