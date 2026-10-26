@@ -468,6 +468,10 @@ button.action-item:active{transform:scale(0.98);}
 .dv-chk{width:58px; height:58px; justify-self:end;}
 .dv-sinagua{display:inline-block; font-size:13px; font-weight:800; color:#7d5600; background:#FDECC8; border:1.5px solid #E5C77A; border-radius:10px; padding:2px 8px; line-height:1.2;}
 .dv-chips .dv-sinagua{flex-basis:100%; width:fit-content;}
+.dv-picker{grid-template-columns:repeat(4,1fr); gap:6px;}
+.dv-pick{min-height:84px; font-size:12.5px; padding:8px 2px;}
+.dv-pick .prod-ico{width:46px; height:46px;}
+.dv-pick .prod-ico img,.dv-pick .prod-ico svg{width:36px; height:36px;}
 </style>
 </head>
 <body>
@@ -501,7 +505,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '36';
+const APP_VERSION = '37';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -577,10 +581,12 @@ const PRODUCTS = {
   combo_pop: { aguaIncl:true, label:'Combo Pop',           single:'Combo Pop',         price: COMBO_POP_PRICE,   emoji:'🍿', sub:'Crispetas + aguita', unit:'combo',   unitP:'combos' },
   pop:       { label:'Crispetas',           single:'Crispetas',         price: POP_PRICE,         emoji:'🍿', unit:'crispetas',  unitP:'crispetas' },
   agua:      { label:'Aguita de manzana',   single:'Aguita de manzana', price: AGUA_PRICE,        emoji:'🍎', unit:'aguita',     unitP:'aguitas' },
+  botella:   { label:'Agua',               single:'Agua',                price: (typeof BOTELLA_PRICE!=='undefined'?BOTELLA_PRICE:2000), unit:'agua', unitP:'aguas' },
   perro:     { aguaIncl:true, label:'Hot Dogs',            single:'Hot Dog americano',    price: PERRO_PRICE,       emoji:'🌭', sub:'americano + aguita de manzana', unit:'perro', unitP:'perros' },
 };
 // Íconos de producto propios (SVG plano, colores de marca)
 const PROD_SVG = {
+  botella: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="19" y="3" width="10" height="6" rx="2" fill="#1B3A6B"/><path d="M20 9h8v4c0 3 5 5 5 10v18a3 3 0 01-3 3H18a3 3 0 01-3-3V23c0-5 5-7 5-10z" fill="#BFE6FA" stroke="#1B3A6B" stroke-width="2"/><path d="M15.5 27h17v14a2 2 0 01-2 2h-13a2 2 0 01-2-2z" fill="#5BB8E8"/><path d="M19 28v9" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>',
   pop: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="16" cy="19" r="6" fill="#FFF3C4" stroke="#F5C842" stroke-width="2"/><circle cx="25" cy="14" r="7.5" fill="#fff" stroke="#F5C842" stroke-width="2"/><circle cx="33" cy="20" r="6" fill="#FFF3C4" stroke="#F5C842" stroke-width="2"/><path d="M11 24h26l-3.4 20H14.4z" fill="#C8292B"/><path d="M16.5 24h4.2l.8 20h-4zM27.3 24h4.2l-1.6 20h-4z" fill="#fff"/><path d="M11 24h26" stroke="#9c1d1f" stroke-width="2.4" stroke-linecap="round"/></svg>',
   combo_pop: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="12" cy="18" r="5" fill="#FFF3C4" stroke="#F5C842" stroke-width="1.8"/><circle cx="20" cy="13" r="6" fill="#fff" stroke="#F5C842" stroke-width="1.8"/><path d="M6 22h22l-2.8 21H8.8z" fill="#C8292B"/><path d="M11 22h3.6l.7 21h-3.4zM19.4 22h3.6l-1.4 21h-3.2z" fill="#fff"/><path d="M33 22h11l-1.6 21H34.6z" fill="#F5C842"/><path d="M33.6 28h9.8l-.4 8h-9z" fill="#C8292B" opacity=".9"/><path d="M41 22l2-8" stroke="#1B3A6B" stroke-width="2.4" stroke-linecap="round"/></svg>',
   agua: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 18h20l-2.4 25H16.4z" fill="#F5C842"/><path d="M15 26h18l-.9 17H16.4z" fill="#e6a91c"/><path d="M12 18h24" stroke="#1B3A6B" stroke-width="3" stroke-linecap="round"/><path d="M29 18l4-11h5" stroke="#2D8C4E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 28.5c-3-2.6-6.4.6-4.6 4.4 1 2.1 3 3.4 4.6 3.4s3.6-1.300 4.600-3.400c1.800-3.800-1.600-7-4.600-4.400z" fill="#C8292B"/><path d="M24 28.3c0-2 .8-3 2-3.600" stroke="#2D8C4E" stroke-width="2" stroke-linecap="round" fill="none"/></svg>',
@@ -781,7 +787,7 @@ function dvRow(o){
 }
 // Un solo listado ordenado por niño (sus pedidos juntos); pendientes primero, entregados abajo
 function dvList(all){
-  const PR = ['perro','combo_pop','pop','agua','brownie','slushie'];
+  const PR = ['perro','combo_pop','pop','agua','botella','brownie','slushie'];
   const first = {};
   all.forEach(o => { const k = o.personId || o.personName; const t = o.createdAt||0; if(!(k in first) || t < first[k]) first[k] = t; });
   const sorted = all.slice().sort((a,b)=>
@@ -803,7 +809,7 @@ function renderDayView(){
   const groups = dvList(all);
 
   const picker = state.pickProduct ? `
-    <div class="dv-picker">${Object.keys(PRODUCTS).map(p => `
+    <div class="dv-picker">${['perro','combo_pop','pop','agua','botella','brownie','slushie'].filter(p=>PRODUCTS[p]).map(p => `
       <button class="dv-pick" data-act="add-for-product" data-p="${p}">${prodIcon(p)}<span>${p==='agua'?'Aguita':PRODUCTS[p].label}</span></button>`).join('')}
     </div>` : '';
 

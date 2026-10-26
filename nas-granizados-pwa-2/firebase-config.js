@@ -37,7 +37,8 @@ const BROWNIE_PRICE = 10000;  // Brownie con helado
 const COMBO_POP_PRICE = 5000; // Combo: crispetas + aguita de manzana
 const POP_PRICE = 2500;       // Crispetas solas
 const AGUA_PRICE = 2500;      // Aguita de manzana sola
-const PERRO_PRICE = 10000;    // Perro caliente + aguita de manzana
+const PERRO_PRICE = 10000;    // Hot dog americano + aguita de manzana
+const BOTELLA_PRICE = 2000;   // Agua (botella)
 
 // PIN para entrar a la app (candado de acceso, no seguridad real).
 // Cámbialo por el que quieran usar tú y la asistente. Puede ser de 4 a 6 dígitos.
