@@ -505,7 +505,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '37';
+const APP_VERSION = '38';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -603,6 +603,10 @@ function priceOf(o){ return (PRODUCTS[o.product||'slushie']||PRODUCTS.slushie).p
 // Si se acabaron las aguitas, a esa unidad solo se le cobra el producto (se descuenta el valor de la aguita)
 function sinAguaOf(o){ const d = PRODUCTS[o.product||'slushie']; return (d && d.aguaIncl) ? Math.max(0, Math.min(o.qty, o.sinAgua||0)) : 0; }
 function orderTotal(o){ return o.qty * priceOf(o) - sinAguaOf(o) * AGUA_PRICE; }
+// Pago parcial (abono): lo que ya entró y lo que aún se debe de un pedido
+function abonoOf(o){ return o.paid ? 0 : Math.max(0, Math.min(orderTotal(o), o.abono||0)); }
+function owedOf(o){ return o.paid ? 0 : Math.max(0, orderTotal(o) - abonoOf(o)); }
+function paidOf(o){ return o.paid ? orderTotal(o) : abonoOf(o); }
 function activePrice(){ return PRODUCTS[state.activeProduct].price; }
 
 const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -679,7 +683,7 @@ function renderSyncBanner(){
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
   const porEntregar = pendingDeliveryToday().length;
-  const porCobrar = orders.filter(o=>!o.paid).reduce((s,o)=>s+orderTotal(o),0);
+  const porCobrar = orders.reduce((s,o)=>s+owedOf(o),0);
 
   return `
   <div class="topbar">
@@ -780,7 +784,7 @@ function dvRow(o){
       <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
-        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>${sinAguaOf(o)>0?`<span class="dv-sinagua">Sin aguita${o.qty>1?' ×'+sinAguaOf(o):''} · ${formatCOP(orderTotal(o))}</span>`:''}</div>
+        <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>${sinAguaOf(o)>0?`<span class="dv-sinagua">Sin aguita${o.qty>1?' ×'+sinAguaOf(o):''} · ${formatCOP(orderTotal(o))}</span>`:''}${abonoOf(o)>0?`<span class="dv-sinagua dv-abono">Abonó ${formatCOP(abonoOf(o))} · Debe ${formatCOP(owedOf(o))}</span>`:''}</div>
       </div>
       <button class="dv-chk ${o.delivered?'on':''}" data-act="chk-delivered" data-id="${o.id}" aria-label="${o.delivered?'Entregado, tocar para deshacer':'Marcar como entregado'}" aria-pressed="${o.delivered?'true':'false'}">${ICONS.check}</button>
     </div>`;
@@ -951,15 +955,15 @@ function renderStatsView(){
   const sumMoney = (f) => mo.filter(f).reduce((s,o)=>s+orderTotal(o),0);
 
   const vendidos    = sumQ(()=>true);
-  const recaudado   = sumMoney(o=>o.paid);
-  const porCobrar   = sumMoney(o=>!o.paid);
+  const recaudado   = mo.reduce((s,o)=>s+paidOf(o),0);
+  const porCobrar   = mo.reduce((s,o)=>s+owedOf(o),0);
   const porEntregar = sumQ(o=>!o.delivered);
   const entregados  = sumQ(o=>o.delivered);
 
   const byDate = (a,b)=> a.date.localeCompare(b.date) || (a.createdAt||0)-(b.createdAt||0);
   const deben      = mo.filter(o=>!o.paid).sort(byDate);
   const pagoFalta  = mo.filter(o=>o.paid && !o.delivered).sort(byDate);
-  const debenTotal = deben.reduce((s,o)=>s+orderTotal(o),0);
+  const debenTotal = deben.reduce((s,o)=>s+owedOf(o),0);
   const pLabel = PRODUCTS[state.activeProduct].label;
 
   return `
@@ -1241,6 +1245,12 @@ function renderOrderActionsSheet(){
             <button data-act="edit-sinagua" data-id="${o.id}" data-delta="1" aria-label="Una unidad más sin aguita">+</button>
           </div>
         </div>` : ''}
+        ${o.paid ? '' : `
+        <div class="action-item abono">
+          ${ICONS.money}<span>Abono<small style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px;">Total ${formatCOP(orderTotal(o))} · ${abonoOf(o)>0 ? 'abonó ' + formatCOP(abonoOf(o)) + ' · debe ' + formatCOP(owedOf(o)) : 'no ha abonado'}</small></span>
+          <input id="abono-input" type="number" inputmode="numeric" min="0" step="500" value="${abonoOf(o)||''}" placeholder="$ abonó" style="width:92px;font-size:17px;font-weight:800;padding:8px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--title);">
+          <button data-act="save-abono" data-id="${o.id}" style="min-height:44px;padding:0 14px;border-radius:12px;border:none;background:var(--navy);color:#fff;font-weight:800;font-size:15px;">Guardar</button>
+        </div>`}
         <button class="action-item ${o.paid?'':'green'}" data-act="toggle-paid" data-id="${o.id}">
           ${o.paid ? ICONS.undo : ICONS.money}
           <span>${o.paid ? 'Marcar como no pagado (debe)' : 'Confirmar pago'}</span>
@@ -1340,6 +1350,15 @@ function handleAction(e){
     o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
     upsertOrder(o);
     showToast(o.paid ? 'Pago confirmado ✓' : 'Marcado como debe', o.paid?ICONS.money:ICONS.clock);
+  }
+  else if(act === 'save-abono'){
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    const inp = document.getElementById('abono-input');
+    const v = Math.max(0, Math.round(parseFloat(inp && inp.value || '0') || 0));
+    o.abono = Math.min(v, orderTotal(o)); o.abonoAt = Date.now();
+    if(o.abono >= orderTotal(o)){ o.paid = true; o.paidAt = Date.now(); }   // abonó todo = pagado
+    upsertOrder(o);
+    openOrderActions(o.id);
   }
   else if(act === 'edit-sinagua'){
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
