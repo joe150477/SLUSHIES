@@ -472,6 +472,33 @@ button.action-item:active{transform:scale(0.98);}
 .dv-pick{min-height:84px; font-size:12.5px; padding:8px 2px;}
 .dv-pick .prod-ico{width:46px; height:46px;}
 .dv-pick .prod-ico img,.dv-pick .prod-ico svg{width:36px; height:36px;}
+/* Consolidado del mes */
+.cons-hero{background:var(--navy); color:#fff; border-radius:22px; padding:14px; box-shadow:var(--shadow-sm);}
+.cons-big{text-align:center; padding:4px 0 10px;}
+.cons-big span{display:block; font-size:14px; font-weight:800; opacity:.85;}
+.cons-big b{display:block; font-size:36px; font-weight:900; color:var(--gold-light); line-height:1.1; margin-top:2px;}
+.cons-big small{font-size:12px; opacity:.8;}
+.cons-two{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.cons-card{border-radius:16px; padding:10px 12px; text-align:center; background:rgba(255,255,255,.12);}
+.cons-card span{display:block; font-size:13px; font-weight:800;}
+.cons-card b{display:block; font-size:22px; font-weight:900; margin-top:2px;}
+.cons-card.ok b{color:#9be3b3;} .cons-card.bad b{color:#ffb4b4;}
+.cons-eq{text-align:center; font-size:12.5px; font-weight:800; margin-top:10px; opacity:.9;}
+.cons-table{margin-top:10px; background:var(--surface); border:2px solid var(--line); border-radius:18px; overflow:hidden;}
+.cons-row{display:grid; grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,1fr)); gap:4px; align-items:center; padding:8px 8px; border-top:1px solid var(--line);}
+.cons-row:first-child{border-top:none;}
+.cons-head{background:#EEF2F8; font-size:11px; font-weight:900; color:var(--muted); text-transform:uppercase; letter-spacing:.3px;}
+.cons-foot{background:#FFF3D6; font-size:14px;}
+.cons-name{display:flex; align-items:center; gap:6px; min-width:0; font-size:13px; color:var(--title);}
+.cons-name b{display:block; line-height:1.1;} .cons-name small{display:block; font-size:11px; color:var(--muted); font-weight:700;}
+.cons-name .prod-ico{width:30px; height:30px; flex-shrink:0;} .cons-name .prod-ico img,.cons-name .prod-ico svg{width:24px; height:24px;}
+.cons-n{text-align:right; font-size:12.5px; font-weight:800; color:var(--title); white-space:nowrap;}
+.cons-n.ok{color:var(--pay-ok);} .cons-n.bad{color:var(--pay-debe);}
+.cons-row{grid-template-columns:minmax(0,1.2fr) repeat(3,minmax(0,1fr)); gap:2px; padding:8px 6px;}
+.cons-head{font-size:10.5px; text-transform:none; letter-spacing:0; line-height:1.1; align-items:end;}
+.cons-head .cons-n{white-space:normal; font-size:10.5px; font-weight:900; color:var(--muted);}
+.cons-n{font-size:12px;}
+.cons-name .prod-ico{display:none;}
 </style>
 </head>
 <body>
@@ -505,7 +532,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '38';
+const APP_VERSION = '39';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -950,7 +977,8 @@ function formatDateShort(dk){
 function renderStatsView(){
   const y = state.statsYear, m = state.statsMonth;
   const prefix = `${y}-${pad(m+1)}`;
-  const mo = orders.filter(o => o.date.startsWith(prefix) && isProd(o));
+  const moAll = orders.filter(o => o.date.startsWith(prefix));          // TODOS los productos del mes
+  const mo = moAll.filter(isProd);                                       // solo el producto elegido (detalle)
   const sumQ = (f) => mo.filter(f).reduce((s,o)=>s+o.qty,0);
   const sumMoney = (f) => mo.filter(f).reduce((s,o)=>s+orderTotal(o),0);
 
@@ -966,16 +994,50 @@ function renderStatsView(){
   const debenTotal = deben.reduce((s,o)=>s+owedOf(o),0);
   const pLabel = PRODUCTS[state.activeProduct].label;
 
+  // ---- CONSOLIDADO: todos los productos juntos. Recaudado + Por cobrar = Total vendido ----
+  const cTotal = moAll.reduce((t,o)=>t+orderTotal(o),0);
+  const cPaid  = moAll.reduce((t,o)=>t+paidOf(o),0);
+  const cOwed  = moAll.reduce((t,o)=>t+owedOf(o),0);
+  const cUnits = moAll.reduce((t,o)=>t+o.qty,0);
+  const DV = ['perro','combo_pop','pop','agua','botella','brownie','slushie'];
+  const rowsP = DV.filter(k=>PRODUCTS[k]).map(k => {
+    const l = moAll.filter(o => (o.product||'slushie') === k);
+    if(!l.length) return '';
+    const t = l.reduce((a,o)=>a+orderTotal(o),0), pd = l.reduce((a,o)=>a+paidOf(o),0), ow = l.reduce((a,o)=>a+owedOf(o),0), u = l.reduce((a,o)=>a+o.qty,0);
+    return `<div class="cons-row">
+      <div class="cons-name">${prodIcon(k)}<span><b>${k==='agua'?'Aguita':PRODUCTS[k].label}</b><small>${u} ${u===1?'ud.':'uds.'}</small></span></div>
+      <div class="cons-n">${formatCOP(t)}</div><div class="cons-n ok">${formatCOP(pd)}</div><div class="cons-n bad">${formatCOP(ow)}</div></div>`;
+  }).join('');
+  const consolidado = `
+    <div class="section-label" style="margin-top:2px;">Consolidado del mes · todos los productos</div>
+    <div class="cons-hero">
+      <div class="cons-big"><span>Total vendido</span><b>${formatCOP(cTotal)}</b><small>${cUnits} artículos</small></div>
+      <div class="cons-two">
+        <div class="cons-card ok"><span>Recaudado</span><b>${formatCOP(cPaid)}</b></div>
+        <div class="cons-card bad"><span>Por cobrar</span><b>${formatCOP(cOwed)}</b></div>
+      </div>
+      <div class="cons-eq">${formatCOP(cPaid)} + ${formatCOP(cOwed)} = ${formatCOP(cPaid+cOwed)} ${cPaid+cOwed===cTotal?'✓':'⚠'}</div>
+    </div>
+    ${rowsP ? `<div class="cons-table">
+      <div class="cons-row cons-head"><div class="cons-name">Producto</div><div class="cons-n">Vendido</div><div class="cons-n">Recaudado</div><div class="cons-n">Por cobrar</div></div>
+      ${rowsP}
+      <div class="cons-row cons-foot"><div class="cons-name"><b>TOTAL</b></div><div class="cons-n">${formatCOP(cTotal)}</div><div class="cons-n ok">${formatCOP(cPaid)}</div><div class="cons-n bad">${formatCOP(cOwed)}</div></div>
+    </div>` : `<div class="empty-state" style="padding:22px;"><p>Aún no hay ventas este mes</p></div>`}`;
+
   return `
   <div class="day-view">
-    <div class="view-title">Resumen · ${pLabel}</div>
+    <div class="view-title">Resumen</div>
     <div class="cal-nav" style="margin-bottom:12px;">
       <button data-act="stats-prev-month" aria-label="Mes anterior">${ICONS.back}</button>
       <div class="cal-title">${MONTH_NAMES[m]} ${y}</div>
       <button data-act="stats-next-month" aria-label="Mes siguiente" style="transform:rotate(180deg)">${ICONS.back}</button>
     </div>
 
-    <div class="section-label" style="margin-top:2px;">¿Cómo vamos este mes?</div>
+    ${consolidado}
+
+    <div class="section-label">Detalle por producto</div>
+    ${renderProductSwitch()}
+    <div class="section-label" style="margin-top:12px;">${pLabel} · ¿Cómo vamos este mes?</div>
     <div class="sv-grid">
       <div class="sv-card" style="border-color:rgba(31,122,67,0.28)"><div class="sv-num money" style="color:var(--pay-ok)">${formatCOP(recaudado)}</div><div class="sv-lbl">Recaudado</div></div>
       <div class="sv-card" style="border-color:rgba(198,32,38,0.28)"><div class="sv-num money" style="color:var(--pay-debe)">${formatCOP(porCobrar)}</div><div class="sv-lbl">Por cobrar</div></div>
@@ -1029,7 +1091,7 @@ function render(){
   app.innerHTML = `
     ${renderSyncBanner()}
     ${showTopbar ? renderTopbar() : ''}
-    ${(state.view==='day' || state.view==='deliver' || state.view==='calendar') ? '' : renderProductSwitch()}
+    ${(state.view==='day' || state.view==='deliver' || state.view==='calendar' || state.view==='stats') ? '' : renderProductSwitch()}
     ${body}
     ${renderBottomNav()}
   `;
