@@ -1,0 +1,72 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "staff": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "wallets": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).val() === true",
+      ".indexOn": ["token"],
+      "$walletId": {
+        ".write": "auth != null && root.child('staff').child(auth.uid).val() === true",
+        ".validate": "newData.hasChildren(['id','name','type','token','balance','blocked','createdAt'])",
+        "id": { ".validate": "newData.val() === $walletId" },
+        "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+        "type": { ".validate": "newData.val() === 'student' || newData.val() === 'teacher'" },
+        "grade": { ".validate": "newData.val() === null || newData.val() === '1st' || newData.val() === '2nd' || newData.val() === '3rd' || newData.val() === '4th' || newData.val() === '5th'" },
+        "token": { ".validate": "newData.isString() && newData.val().length === 24" },
+        "balance": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0" },
+        "blocked": { ".validate": "newData.isBoolean()" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "lastTxn": { ".validate": "newData.isString()" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "txns": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).val() === true",
+      ".indexOn": ["at", "walletId"],
+      "$txnId": {
+        ".write": "auth != null && root.child('staff').child(auth.uid).val() === true && !data.exists()",
+        ".validate": "newData.hasChildren(['id','walletId','type','amount','balanceAfter','by','at'])",
+        "id": { ".validate": "newData.val() === $txnId" },
+        "walletId": { ".validate": "newData.isString()" },
+        "type": { ".validate": "newData.val() === 'recarga' || newData.val() === 'compra' || newData.val() === 'ajuste' || newData.val() === 'reverso'" },
+        "amount": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() % 1 === 0" },
+        "sign": { ".validate": "newData.val() === 1 || newData.val() === -1" },
+        "balanceAfter": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0" },
+        "orderIds": { ".validate": "newData.hasChildren() || newData.val() === null" },
+        "method": { ".validate": "newData.val() === null || newData.val() === 'efectivo' || newData.val() === 'bre-b' || newData.val() === 'nequi'" },
+        "by": { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "at": { ".validate": "newData.isNumber()" },
+        "note": { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "items": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "orders": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('staff').child(auth.uid).val() === true"
+    },
+
+    "view": {
+      "$token": {
+        ".read": true,
+        ".write": "auth != null && root.child('staff').child(auth.uid).val() === true",
+        ".validate": "newData.hasChildren(['name','balance','updatedAt'])",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "course": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "balance": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "last": { ".validate": "newData.hasChildren() || newData.val() === null" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
