@@ -499,6 +499,15 @@ button.action-item:active{transform:scale(0.98);}
 .cons-head .cons-n{white-space:normal; font-size:10.5px; font-weight:900; color:var(--muted);}
 .cons-n{font-size:12px;}
 .cons-name .prod-ico{display:none;}
+/* Botones pequeños sobre la imagen del producto: sin aguita y eliminar */
+.dv-mini{position:absolute; bottom:-7px; width:34px; height:34px; border-radius:50%; border:2px solid #fff; display:flex; align-items:center; justify-content:center; padding:0; box-shadow:0 2px 6px rgba(0,0,0,.25); font-size:17px; line-height:1;}
+.dv-del{right:-9px; background:#FBE0E0; color:#B42323;}
+.dv-del svg{width:17px; height:17px;}
+.dv-sa{left:-9px; background:#EEF2F8; color:#1B3A6B;}
+.dv-sa span{filter:grayscale(1); opacity:.55;}
+.dv-sa.on{background:#FDECC8; border-color:#E5A93A;}
+.dv-sa.on span{filter:none; opacity:1;}
+.dv-sa.on::after{content:""; position:absolute; left:6px; right:6px; top:50%; height:3px; background:#C8292B; transform:rotate(-40deg); border-radius:2px;}
 </style>
 </head>
 <body>
@@ -532,7 +541,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '39';
+const APP_VERSION = '40';
 const APP_UPDATED = '21 oct 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -808,7 +817,9 @@ function dvRow(o){
   const pr = PRODUCTS[o.product||'slushie'] || PRODUCTS.slushie;
   return `
     <div class="dv-row ${accClass(o)} ${o.delivered?'is-delivered':''}">
-      <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span></div>
+      <div class="dv-prod" title="${esc(pr.label)}" aria-label="${esc(pr.single)}, ${o.qty}">${prodIcon(o.product||'slushie')}<span class="dv-qtyb ${o.qty>1?'multi':''}">×${o.qty}</span>
+        ${pr.aguaIncl ? `<button class="dv-mini dv-sa ${sinAguaOf(o)>0?'on':''}" data-act="quick-sinagua" data-id="${o.id}" aria-label="Sin aguita (se acabó)" title="Sin aguita"><span>🍎</span></button>` : ''}
+        <button class="dv-mini dv-del" data-act="ask-delete" data-id="${o.id}" aria-label="Eliminar pedido" title="Eliminar pedido">${ICONS.trash}</button></div>
       <div class="dv-info" data-act="open-order" data-id="${o.id}">
         <div class="dv-name">${esc(o.personName)}</div>
         <div class="dv-chips"><span class="dv-course">${course}</span><button class="dv-pay ${o.paid?'paid':'debe'}" data-act="chk-paid" data-id="${o.id}">${o.paid?'Pagado':'Debe'}</button>${sinAguaOf(o)>0?`<span class="dv-sinagua">Sin aguita${o.qty>1?' ×'+sinAguaOf(o):''} · ${formatCOP(orderTotal(o))}</span>`:''}${abonoOf(o)>0?`<span class="dv-sinagua dv-abono">Abonó ${formatCOP(abonoOf(o))} · Debe ${formatCOP(owedOf(o))}</span>`:''}</div>
@@ -1412,6 +1423,12 @@ function handleAction(e){
     o.paid = !o.paid; o.paidAt = o.paid ? Date.now() : null;
     upsertOrder(o);
     showToast(o.paid ? 'Pago confirmado ✓' : 'Marcado como debe', o.paid?ICONS.money:ICONS.clock);
+  }
+  else if(act === 'quick-sinagua'){      // toque rápido: sin aguita (se acabó). Si hay varias unidades, va sumando; al pasar de la cantidad, vuelve a 0
+    const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
+    o.sinAgua = (sinAguaOf(o) + 1) % (o.qty + 1);
+    upsertOrder(o);
+    showToast(o.sinAgua > 0 ? 'Sin aguita' + (o.qty>1 ? ' ×'+o.sinAgua : '') + ' · cobrar ' + formatCOP(orderTotal(o)) : 'Con aguita · cobrar ' + formatCOP(orderTotal(o)));
   }
   else if(act === 'save-abono'){
     const o = orders.find(x => x.id === el.dataset.id); if(!o) return;
