@@ -541,8 +541,8 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '40';
-const APP_UPDATED = '21 oct 2026';
+const APP_VERSION = '41';
+const APP_UPDATED = '9 nov 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
 let cloudOn = false;              // ¿estamos sincronizados con Firebase?
@@ -619,6 +619,7 @@ const PRODUCTS = {
   agua:      { label:'Aguita de manzana',   single:'Aguita de manzana', price: AGUA_PRICE,        emoji:'🍎', unit:'aguita',     unitP:'aguitas' },
   botella:   { label:'Agua',               single:'Agua',                price: (typeof BOTELLA_PRICE!=='undefined'?BOTELLA_PRICE:2000), unit:'agua', unitP:'aguas' },
   perro:     { aguaIncl:true, label:'Hot Dogs',            single:'Hot Dog americano',    price: PERRO_PRICE,       emoji:'🌭', sub:'americano + aguita de manzana', unit:'perro', unitP:'perros' },
+  sandwich:  { aguaIncl:true, label:'Sánduches',          single:'Sánduche combo',    price: COMBO_PRICE,       icon:'icons/sandwich-flat.png', sub:'Sánduche + aguita de manzana', unit:'combo', unitP:'combos' },
 };
 // Íconos de producto propios (SVG plano, colores de marca)
 const PROD_SVG = {

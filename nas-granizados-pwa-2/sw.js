@@ -1,8 +1,8 @@
-const CACHE = 'nas-granizados-v40';
+const CACHE = 'nas-granizados-v41';
 const CORE = [
   './', './index.html', './data.js', './firebase-config.js', './manifest.json',
   './logo.png', './logo-munchies.png', './icons/galleta-192.png', './icons/galleta-512.png', './icons/galleta-180.png',
-  './icons/slushie-flat.png', './icons/brownie-flat.png',
+  './icons/slushie-flat.png', './icons/brownie-flat.png', './icons/sandwich-flat.png',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
 ];

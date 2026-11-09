@@ -34,6 +34,7 @@ const FIREBASE_CONFIG = {
 // Precios (en pesos). Cámbialos si suben.
 const UNIT_PRICE = 6000;      // Slushie / granizado
 const BROWNIE_PRICE = 10000;  // Brownie con helado
+const COMBO_PRICE = 6000;     // Sanduchito combo + aguita de manzana
 const COMBO_POP_PRICE = 5000; // Combo: crispetas + aguita de manzana
 const POP_PRICE = 2500;       // Crispetas solas
 const AGUA_PRICE = 2500;      // Aguita de manzana sola
