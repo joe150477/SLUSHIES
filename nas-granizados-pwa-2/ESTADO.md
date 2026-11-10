@@ -23,11 +23,16 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
 - Ícono nuevo `icons/sandwich-flat.png` (pan tajado + vaso de aguita con pitillo).
 - `sw.js` → v41 (+ ícono en cache); `APP_VERSION='41'`; `APP_UPDATED='9 nov 2026'`.
 - Verificado: sintaxis JS OK, SW OK, ícono existe. (Switcher y stats heredan solos.)
+- **Commit + push HECHOS** por el usuario (commit `e3c0c59` "oki"); origin/main sincronizado.
+  RAW en GitHub ya tiene v41 + sandwich + ícono (200). ✅
 
 ## PENDIENTE
-1. **git commit + `git push origin main`** (en la terminal del usuario) para publicar.
-2. En el celular: si no dice **v41**, quitar el ícono y volver a "Agregar a inicio" una vez.
-3. Verificar en vivo que "Sánduches" aparezca en el selector y tenga sus estadísticas.
+1. **GitHub Pages aún desplegando**: el sitio en vivo todavía sirve v40 (ícono 404 en Pages).
+   Es solo retraso de Pages (no error). Esperar 2–20 min y verificar que el sitio diga **v41**.
+   Ver progreso: https://github.com/joe150477/SLUSHIES/deployments (o Actions).
+2. Cuando Pages muestre v41: en el celular quitar el ícono y volver a "Agregar a inicio"
+   una vez (salto de caché v40→v41). Ahí aparece "Sánduches" en el selector.
+3. (Opcional) armar anuncio de WhatsApp del sanduchito combo (como el del brownie).
 
 ## Reglas
 - Probar de verdad antes de declarar hecho; decir qué no se pudo probar.
