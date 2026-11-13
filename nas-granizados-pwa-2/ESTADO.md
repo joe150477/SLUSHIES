@@ -44,11 +44,12 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
   perroSold/perroLeft/setPerroStock`. `APP_VERSION='43'`, `sw.js`→v43. Sintaxis/lógica OK.
 
 ## PENDIENTE
-1. **v43 YA COMMITEADO** (commits `ce65e99` + `0e64a19`; verificado que el cupo está en HEAD),
-   **pero PUSH BLOQUEADO** otra vez por 403 (llavero volvió al token de `newacademyschool`).
-   → **Subir con GitHub Desktop** (está logueado como joe150477; muestra 2 commits → Push origin).
-   Fix permanente pendiente: borrar entradas "github.com" del colegio en Acceso a Llaveros,
-   o pasar el remoto a **SSH** (el usuario quiere que le guíe para esto).
+1. **v43 COMMITEADO** (`ce65e99` + `0e64a19`, cupo verificado en HEAD) — falta el PUSH.
+   **SSH YA CONFIGURADO (fix permanente del 403):** llave `~/.ssh/id_ed25519_joe150477`,
+   alias `github-joe` en `~/.ssh/config` (IdentitiesOnly), remoto = `git@github-joe:joe150477/SLUSHIES.git`.
+   → **Falta que el usuario pegue la llave pública** en github.com/settings/ssh/new
+   (logueado como **joe150477**, no el colegio). Cuando diga "ya": correr
+   `ssh -T git@github-joe` (esperar "Hi joe150477") y `git push origin main` (incluye ESTADO.md).
 2. En el celular: cuando el sitio diga **v43**, cerrar/reabrir la app para saltar caché.
 2. Usuario: tocar **"Pagado"** a los 4 pedidos de hoy que ya pagaron (quedaron en "Debe").
 3. (Opcional) anuncio WhatsApp del sanduchito combo.
