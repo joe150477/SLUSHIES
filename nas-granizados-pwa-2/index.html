@@ -541,8 +541,8 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '41';
-const APP_UPDATED = '9 nov 2026';
+const APP_VERSION = '42';
+const APP_UPDATED = '13 nov 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
 let cloudOn = false;              // ¿estamos sincronizados con Firebase?
@@ -593,8 +593,10 @@ function initCloud(){
   } catch(e) { cloudOn = false; db = null; }
 }
 
-const GRADES = ['1st','2nd','3rd','4th','5th'];
-const GRADE_LABELS = {'1st':'1°','2nd':'2°','3rd':'3°','4th':'4°','5th':'5°'};
+const GRADES = ['prek','preesc','1st','2nd','3rd','4th','5th'];
+const GRADE_LABELS = {'prek':'Prekínder','preesc':'Preescolar','1st':'1°','2nd':'2°','3rd':'3°','4th':'4°','5th':'5°'};
+const PRESCHOOL = new Set(['prek','preesc']);
+function gradoLabel(g){ return (GRADE_LABELS[g]||g) + (PRESCHOOL.has(g) ? '' : ' grado'); }
 
 function initials(name){
   const parts = (name||'').trim().split(/\s+/).filter(Boolean);
@@ -608,7 +610,7 @@ function pad(n){ return n < 10 ? '0'+n : ''+n; }
 function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
 function todayKey(){ const t = new Date(); return dateKey(t.getFullYear(), t.getMonth(), t.getDate()); }
 function formatCOP(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
-function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : (GRADE_LABELS[o.grade] + ' grado'); }
+function personTypeLabel(o){ return o.personType === 'teacher' ? 'Docente' : gradoLabel(o.grade); }
 
 // ---- Productos (cada uno con su precio, ícono y estadísticas separadas) ----
 const PRODUCTS = {
@@ -695,6 +697,7 @@ const app = document.getElementById('app');
 (function(){ const t=document.createElement('div'); t.id='ver-tag'; t.textContent='v'+APP_VERSION; document.body.appendChild(t); })();
 
 function ordersForDate(dk){ return orders.filter(o => o.date === dk); }   // todos los productos
+function sumQty(list){ return list.reduce((s,o)=>s+(o.qty||0),0); }       // suma CANTIDADES (no pedidos)
 function dayStats(dk){
   const list = ordersForDate(dk);
   return {
@@ -719,7 +722,7 @@ function renderSyncBanner(){
 // ============ RENDER: TOP BAR ============
 function renderTopbar(){
   const totalToday = ordersForDate(todayKey()).reduce((s,o)=>s+o.qty,0);
-  const porEntregar = pendingDeliveryToday().length;
+  const porEntregar = sumQty(pendingDeliveryToday());
   const porCobrar = orders.reduce((s,o)=>s+owedOf(o),0);
 
   return `
@@ -846,8 +849,8 @@ function renderDayView(){
   const dateObj = new Date(dk + 'T00:00:00');
   const dayLabel = dateObj.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
   const all = orders.filter(o => o.date === dk);
-  const totalPend = all.filter(o=>!o.delivered).length;
-  const totalDone = all.length - totalPend;
+  const totalPend = sumQty(all.filter(o=>!o.delivered));
+  const totalDone = sumQty(all.filter(o=>o.delivered));
 
   const groups = dvList(all);
 
@@ -887,8 +890,8 @@ function renderDeliverView(){
   const tk = todayKey();
   let q = orders.slice();                      // TODOS los productos juntos
   if(state.deliverScope === 'today') q = q.filter(o => o.date === tk);
-  const porEntregar = q.filter(o=>!o.delivered).length;
-  const entregados = q.filter(o=>o.delivered).length;
+  const porEntregar = sumQty(q.filter(o=>!o.delivered));
+  const entregados = sumQty(q.filter(o=>o.delivered));
 
   let content;
   if(!q.length){
@@ -901,7 +904,7 @@ function renderDeliverView(){
     content = Object.keys(byDate).sort().reverse().map(dk => {
       const dObj = new Date(dk + 'T00:00:00');
       const lbl = dk===tk ? 'Hoy' : dObj.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'short'});
-      const pend = byDate[dk].filter(o=>!o.delivered).length;
+      const pend = sumQty(byDate[dk].filter(o=>!o.delivered));
       return `<div class="date-group-label">${lbl} <span class="pill">${pend} por entregar</span></div>${dvList(byDate[dk])}`;
     }).join('');
   } else {
@@ -960,7 +963,7 @@ function renderListView(){
   const rows = filtered.length ? courseOrder.map(k => {
       const g = filtered.filter(o => courseKey(o) === k);
       if(!g.length) return '';
-      const lbl = k==='teacher' ? 'Docentes' : (k==='?' ? 'Otros' : GRADE_LABELS[k] + ' grado');
+      const lbl = k==='teacher' ? 'Docentes' : (k==='?' ? 'Otros' : gradoLabel(k));
       const pend = g.filter(o=>!isDone(o)).length;
       return `<div class="date-group-label">${lbl} <span class="pill">${g.length} pedido${g.length===1?'':'s'}${pend?` · ${pend} pendiente${pend===1?'':'s'}`:''}</span></div>${g.map(orderCardDated).join('')}`;
     }).join('')
@@ -1072,7 +1075,7 @@ function renderStatsView(){
 
 // ============ RENDER: BOTTOM NAV ============
 function renderBottomNav(){
-  const porEntregar = pendingDeliveryToday().length;
+  const porEntregar = sumQty(pendingDeliveryToday());
   const tabs = [
     {id:'calendar', icon:ICONS.calendar, label:'Calendario'},
     {id:'deliver',  icon:ICONS.truck,    label:'Entregar', badge: porEntregar},
@@ -1202,7 +1205,7 @@ function renderNewOrderSheet(){
       <div style="text-align:center; margin-bottom:6px;">
         <div class="person-avatar-lg" style="${d.personType==='teacher'?'background:var(--red);color:#fff':''}">${initials(d.personName)}</div>
         <div style="font-weight:800; font-size:17px;">${esc(d.personName)}</div>
-        <div style="font-size:12.5px; color:var(--muted); margin-top:2px;">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</div>
+        <div style="font-size:12.5px; color:var(--muted); margin-top:2px;">${d.personType==='teacher'?'Docente':gradoLabel(d.grade)}</div>
       </div>
       <div class="qty-stepper">
         <button class="qty-btn minus" data-act="qty-dec" aria-label="Menos">−</button>
@@ -1218,7 +1221,7 @@ function renderNewOrderSheet(){
     stepContent = `
       <div class="confirm-summary">
         <div class="confirm-row"><span class="k">Cliente</span><span class="v">${esc(d.personName)}</span></div>
-        <div class="confirm-row"><span class="k">Curso</span><span class="v">${d.personType==='teacher'?'Docente':GRADE_LABELS[d.grade]+' grado'}</span></div>
+        <div class="confirm-row"><span class="k">Curso</span><span class="v">${d.personType==='teacher'?'Docente':gradoLabel(d.grade)}</span></div>
         <div class="confirm-divider"></div>
         <div class="confirm-row"><span class="k">Producto</span><span class="v">${PRODUCTS[state.activeProduct].single}</span></div>
         <div class="confirm-row"><span class="k">Cantidad</span><span class="v">${d.qty} ${unitFor(d.qty)}</span></div>

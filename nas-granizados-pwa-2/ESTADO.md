@@ -17,22 +17,28 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
 - Repo: github `joe150477/SLUSHIES` → GitHub Pages:
   https://joe150477.github.io/SLUSHIES/nas-granizados-pwa-2/
 
-## Hecho ahora (v41)
-- Agregado producto `sandwich` = **Sánduche combo + aguita de manzana** a **$6.000**
-  (`COMBO_PRICE` en firebase-config.js, línea 37).
-- Ícono nuevo `icons/sandwich-flat.png` (pan tajado + vaso de aguita con pitillo).
-- `sw.js` → v41 (+ ícono en cache); `APP_VERSION='41'`; `APP_UPDATED='9 nov 2026'`.
-- Verificado: sintaxis JS OK, SW OK, ícono existe. (Switcher y stats heredan solos.)
-- **Commit + push HECHOS** por el usuario (commit `e3c0c59` "oki"); origin/main sincronizado.
-  RAW en GitHub ya tiene v41 + sandwich + ícono (200). ✅
+## Hecho (histórico)
+- v41: producto `sandwich` (Sánduche combo + aguita, $6.000, `COMBO_PRICE`) + ícono
+  `icons/sandwich-flat.png`. Ya en vivo (commit `e3c0c59`).
+
+## Hecho ahora (v42, SIN subir aún)
+- **FIX conteo**: "por entregar/entregados" sumaban PEDIDOS, no cantidades (2 perros=1).
+  Ahora usan `sumQty()` (día, Entregar, badge, header). Resumen mensual ya sumaba bien.
+- Grados nuevos **Prekínder** (`prek`) y **Preescolar** (`preesc`) en GRADES/GRADE_LABELS +
+  helper `gradoLabel()` (preescolar no dice "grado").
+- Personas en data.js: Juan Pablo Méndez (prek, stu_095), Isabella Díaz (preesc, stu_096,
+  ESTUDIANTE), Mathías Salas (4°, stu_097), docente Fiorella (t_020).
+- `APP_VERSION='42'`, `APP_UPDATED='13 nov 2026'`, `sw.js`→v42. Sintaxis JS/SW OK.
+- **Datos YA en vivo en Firebase** (no requieren deploy): Dominik Gutiérrez perro de hoy
+  movido a **2026-11-20** (sin entregar, pagado). Creados 4 pedidos de hoy entregados en
+  "Debe": Juan Pablo/Isabella/Mathías = perro, Fiorella = **slushie** (corregido).
 
 ## PENDIENTE
-1. **GitHub Pages aún desplegando**: el sitio en vivo todavía sirve v40 (ícono 404 en Pages).
-   Es solo retraso de Pages (no error). Esperar 2–20 min y verificar que el sitio diga **v41**.
-   Ver progreso: https://github.com/joe150477/SLUSHIES/deployments (o Actions).
-2. Cuando Pages muestre v41: en el celular quitar el ícono y volver a "Agregar a inicio"
-   una vez (salto de caché v40→v41). Ahí aparece "Sánduches" en el selector.
-3. (Opcional) armar anuncio de WhatsApp del sanduchito combo (como el del brownie).
+1. **Subir v42**: `cd ~/Documents/GitHub/SLUSHIES && git add -A && git commit -m "..." && git push origin main`.
+2. Esperar despliegue de Pages y verificar que el sitio diga **v42**; refrescar el celular
+   (quitar/re-agregar la app) para ver grados nuevos al registrar pedidos.
+3. Usuario: tocar **"Pagado"** a los nuevos que ya pagaron (quedaron en "Debe").
+4. (Opcional) anuncio WhatsApp del sanduchito combo.
 
 ## Reglas
 - Probar de verdad antes de declarar hecho; decir qué no se pudo probar.
