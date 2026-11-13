@@ -33,16 +33,16 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
   movido a **2026-11-20** (sin entregar, pagado). Creados 4 pedidos de hoy entregados en
   "Debe": Juan Pablo/Isabella/Mathías = perro, Fiorella = **slushie** (corregido).
 
+## DESPLEGADO ✅
+- **v42 YA EN VIVO** (RAW + GitHub Pages ambos v42). Push resuelto tras arreglar la cuenta
+  (el llavero tenía token de `newacademyschool`; se reautenticó como `joe150477`).
+
 ## PENDIENTE
-1. **v42 commiteado (`b721352`) pero PUSH BLOQUEADO**: 403 — el llavero de macOS tiene un
-   token de la cuenta del colegio (`newacademyschool`) sin permiso sobre `joe150477/SLUSHIES`.
-   Arreglo: subir con **GitHub Desktop como joe150477**, o en terminal borrar la credencial
-   (`printf "protocol=https\nhost=github.com\n\n" | git credential-osxkeychain erase`) y
-   `git push origin main` iniciando sesión como **joe150477** (usuario + PAT con scope `repo`).
-2. Esperar despliegue de Pages y verificar que el sitio diga **v42**; refrescar el celular
-   (quitar/re-agregar la app) para ver grados nuevos al registrar pedidos.
-3. Usuario: tocar **"Pagado"** a los nuevos que ya pagaron (quedaron en "Debe").
-4. (Opcional) anuncio WhatsApp del sanduchito combo.
+1. En el celular: si no dice **v42**, cerrar/reabrir la app (o quitar/re-agregar) para saltar caché.
+2. Usuario: tocar **"Pagado"** a los 4 pedidos de hoy que ya pagaron (quedaron en "Debe").
+3. (Opcional) anuncio WhatsApp del sanduchito combo.
+- Nota cuenta: si vuelve a fallar el push con 403, es que el llavero volvió a la cuenta del
+  colegio; reautenticar como joe150477 (GitHub Desktop o PAT).
 
 ## Reglas
 - Probar de verdad antes de declarar hecho; decir qué no se pudo probar.

@@ -403,6 +403,25 @@ button.action-item:active{transform:scale(0.98);}
 .dv .add-order-btn{min-height:54px; font-size:18px;}
 .dv-picker{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0 4px;}
 .dv-pick{display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 4px; min-height:92px; border-radius:16px; border:2px solid var(--line); background:var(--surface); font-size:14px; font-weight:800; color:var(--title);}
+.dv-pick.is-out{opacity:.5;}
+.pick-left{font-size:11px; font-weight:900; color:var(--del-wait);}
+.pick-out{font-size:11px; font-weight:900; color:var(--red);}
+/* ---- Cupo de perros ---- */
+.cupo-bar{display:flex; flex-direction:column; gap:9px; background:var(--surface); border:2px solid var(--line); border-radius:16px; padding:10px 12px; margin:6px 0 10px;}
+.cupo-bar.agotado{border-color:var(--red); background:rgba(200,41,43,0.06);}
+.cupo-info{display:flex; align-items:center; gap:10px;}
+.cupo-info .prod-ico{width:42px; height:42px; flex-shrink:0;}
+.cupo-info .prod-ico img,.cupo-info .prod-ico svg{width:34px; height:34px;}
+.cupo-t{font-size:14px; font-weight:900; color:var(--title);}
+.cupo-t b{color:var(--red);}
+.cupo-s{font-size:13px; font-weight:700; color:var(--muted);}
+.cupo-s b{color:var(--title);}
+.cupo-ctrls{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.cupo-btn{width:40px; height:40px; border-radius:12px; border:2px solid var(--line); background:var(--surface); font-size:24px; font-weight:900; color:var(--navy); line-height:1; display:flex; align-items:center; justify-content:center;}
+.cupo-val{min-width:44px; text-align:center; font-size:21px; font-weight:900; color:var(--navy);}
+.cupo-preset{min-width:42px; height:38px; border-radius:11px; border:2px solid var(--line); background:var(--surface); font-size:15px; font-weight:800; color:var(--navy-light);}
+.cupo-preset.on{background:var(--navy); color:#fff; border-color:var(--navy);}
+.cupo-clear{height:38px; padding:0 12px; border-radius:11px; border:none; background:transparent; color:var(--muted); font-size:13px; font-weight:800; text-decoration:underline;}
 .dv-group{margin-top:18px;}
 .dv-ghead{display:flex; align-items:center; gap:10px; background:var(--navy); color:#fff; border-radius:18px 18px 6px 6px; padding:10px 12px;}
 .dv-ghead .prod-ico{background:#fff; width:48px; height:48px;}
@@ -541,7 +560,7 @@ const ICONS = {
 };
 
 // ============ STATE & PERSISTENCE ============
-const APP_VERSION = '42';
+const APP_VERSION = '43';
 const APP_UPDATED = '13 nov 2026';
 const STORAGE_KEY = 'nas_granizados_orders_v2';
 let orders = [];
@@ -571,6 +590,23 @@ function deleteOrderById(id){
   render();
 }
 
+// ---- Cupo/stock de PERROS por día (solo perros) ----
+const STOCK_KEY = 'nas_stock_v1';
+let stockMap = {};   // { 'YYYY-MM-DD': { perro: 30 } }
+function loadLocalStock(){ try{ stockMap = JSON.parse(localStorage.getItem(STOCK_KEY)) || {}; }catch(e){ stockMap = {}; } }
+function saveLocalStock(){ try{ localStorage.setItem(STOCK_KEY, JSON.stringify(stockMap)); }catch(e){} }
+function perroCupo(dk){ const v = stockMap[dk] && stockMap[dk].perro; return (typeof v === 'number' && v >= 0) ? v : null; }
+function perroSold(dk){ return sumQty(orders.filter(o => o.date === dk && (o.product||'slushie') === 'perro')); }
+function perroLeft(dk){ const c = perroCupo(dk); return c == null ? Infinity : (c - perroSold(dk)); }
+function setPerroStock(dk, n){
+  if(!stockMap[dk]) stockMap[dk] = {};
+  const val = (n == null) ? null : Math.max(0, Math.floor(n));
+  if(val == null) delete stockMap[dk].perro; else stockMap[dk].perro = val;
+  saveLocalStock();
+  if(cloudOn && db){ db.ref('stock/' + dk + '/perro').set(val).catch(()=>{}); }
+  render();
+}
+
 // ============ FIREBASE ============
 function cloudConfigured(){
   return typeof FIREBASE_CONFIG !== 'undefined'
@@ -590,6 +626,11 @@ function initCloud(){
       saveLocal();
       render();
     }, () => { /* error de lectura: seguimos con lo local */ });
+    db.ref('stock').on('value', (snap) => {
+      stockMap = snap.val() || {};
+      saveLocalStock();
+      render();
+    }, () => {});
   } catch(e) { cloudOn = false; db = null; }
 }
 
@@ -843,6 +884,25 @@ function dvList(all){
     PR.indexOf(a.product||'slushie') - PR.indexOf(b.product||'slushie'));
   return sorted.map(dvRow).join('');
 }
+function perroCupoBar(dk){
+  const cupo = perroCupo(dk), sold = perroSold(dk);
+  const left = cupo == null ? null : Math.max(0, cupo - sold);
+  const agot = cupo != null && (cupo - sold) <= 0;
+  return `
+  <div class="cupo-bar ${agot?'agotado':''}">
+    <div class="cupo-info">${prodIcon('perro')}<div>
+      <div class="cupo-t">Perros de hoy${agot?' · <b>AGOTADO</b>':''}</div>
+      <div class="cupo-s">${cupo == null ? `Sin límite · vendidos ${sold}` : `Vendidos ${sold} de ${cupo} · quedan <b>${left}</b>`}</div>
+    </div></div>
+    <div class="cupo-ctrls">
+      <button class="cupo-btn" data-act="cupo-dec" aria-label="menos">−</button>
+      <span class="cupo-val">${cupo == null ? '∞' : cupo}</span>
+      <button class="cupo-btn" data-act="cupo-inc" aria-label="más">+</button>
+      ${[20,30,40,50].map(n=>`<button class="cupo-preset ${cupo===n?'on':''}" data-act="cupo-set" data-n="${n}">${n}</button>`).join('')}
+      ${cupo == null ? '' : `<button class="cupo-clear" data-act="cupo-clear">sin límite</button>`}
+    </div>
+  </div>`;
+}
 function renderDayView(){
   const dk = state.selectedDate;
   if(!dk) return '';
@@ -855,8 +915,12 @@ function renderDayView(){
   const groups = dvList(all);
 
   const picker = state.pickProduct ? `
-    <div class="dv-picker">${['perro','combo_pop','pop','agua','botella','brownie','slushie'].filter(p=>PRODUCTS[p]).map(p => `
-      <button class="dv-pick" data-act="add-for-product" data-p="${p}">${prodIcon(p)}<span>${p==='agua'?'Aguita':PRODUCTS[p].label}</span></button>`).join('')}
+    <div class="dv-picker">${['perro','combo_pop','pop','agua','botella','brownie','slushie'].filter(p=>PRODUCTS[p]).map(p => {
+      const c = p==='perro' ? perroCupo(dk) : null, l = p==='perro' ? perroLeft(dk) : Infinity;
+      const out = p==='perro' && c != null && l <= 0;
+      const tag = p==='perro' && c != null ? (out ? '<span class="pick-out">AGOTADO</span>' : `<span class="pick-left">quedan ${l}</span>`) : '';
+      return `<button class="dv-pick ${out?'is-out':''}" data-act="add-for-product" data-p="${p}">${prodIcon(p)}<span>${p==='agua'?'Aguita':PRODUCTS[p].label}</span>${tag}</button>`;
+    }).join('')}
     </div>` : '';
 
   return `
@@ -867,6 +931,7 @@ function renderDayView(){
       <div class="dv-sum pend"><b>${totalPend}</b><span>por entregar</span></div>
       <div class="dv-sum done"><b>${totalDone}</b><span>entregados</span></div>
     </div>
+    ${perroCupoBar(dk)}
     <button class="add-order-btn" data-act="toggle-pick">${ICONS.plus} ${state.pickProduct?'Elige qué se pidió':'Agregar pedido'}</button>
     ${picker}
     ${all.length ? groups : `<div class="empty-state"><div class="es-icon">${ICONS.cone}</div>
@@ -1386,7 +1451,17 @@ function handleAction(e){
   else if(act === 'back-to-cal'){ state.view = 'calendar'; state.pickProduct = false; render(); }
   else if(act === 'new-order'){ openNewOrderModal(); }
   else if(act === 'toggle-pick'){ state.pickProduct = !state.pickProduct; render(); }
-  else if(act === 'add-for-product'){ state.activeProduct = el.dataset.p; state.pickProduct = false; openNewOrderModal(); }
+  else if(act === 'cupo-inc'){ const c = perroCupo(state.selectedDate); setPerroStock(state.selectedDate, (c==null?perroSold(state.selectedDate):c) + 1); }
+  else if(act === 'cupo-dec'){ const c = perroCupo(state.selectedDate); if(c!=null) setPerroStock(state.selectedDate, Math.max(0, c - 1)); }
+  else if(act === 'cupo-set'){ setPerroStock(state.selectedDate, parseInt(el.dataset.n,10)); }
+  else if(act === 'cupo-clear'){ setPerroStock(state.selectedDate, null); }
+  else if(act === 'add-for-product'){
+    const p = el.dataset.p;
+    if(p === 'perro' && perroCupo(state.selectedDate) != null && perroLeft(state.selectedDate) <= 0){
+      showToast('🌭 Perros agotados hoy. Sube el cupo para vender más.', ICONS.warn); return;
+    }
+    state.activeProduct = p; state.pickProduct = false; openNewOrderModal();
+  }
   else if(act === 'close-modal'){ closeModal(); }
   else if(act === 'filter'){ state.listFilter = el.dataset.f; render(); }
   else if(act === 'set-product'){ state.activeProduct = el.dataset.p; render(); }
@@ -1478,6 +1553,13 @@ function handleAction(e){
   else if(act === 'prev-step'){ state.modal.step--; renderModal(); }
   else if(act === 'save-order'){
     const d = state.modal.data;
+    if(state.activeProduct === 'perro' && perroCupo(state.selectedDate) != null){
+      const left = perroLeft(state.selectedDate);
+      if(d.qty > left){
+        showToast(left <= 0 ? '🌭 Perros agotados hoy' : `Solo quedan ${left} perro${left===1?'':'s'} hoy`, ICONS.warn);
+        return;   // no guarda ni cierra; el usuario ajusta la cantidad o el cupo
+      }
+    }
     const now = Date.now();
     upsertOrder({
       id: uid(), date: state.selectedDate, product: state.activeProduct,
@@ -1650,6 +1732,7 @@ checkForUpdate();
 
 // ============ INIT ============
 loadLocal();
+loadLocalStock();
 
 function boot(){
   render();
