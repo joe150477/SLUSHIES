@@ -34,7 +34,11 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
   "Debe": Juan Pablo/Isabella/Mathías = perro, Fiorella = **slushie** (corregido).
 
 ## PENDIENTE
-1. **Subir v42**: `cd ~/Documents/GitHub/SLUSHIES && git add -A && git commit -m "..." && git push origin main`.
+1. **v42 commiteado (`b721352`) pero PUSH BLOQUEADO**: 403 — el llavero de macOS tiene un
+   token de la cuenta del colegio (`newacademyschool`) sin permiso sobre `joe150477/SLUSHIES`.
+   Arreglo: subir con **GitHub Desktop como joe150477**, o en terminal borrar la credencial
+   (`printf "protocol=https\nhost=github.com\n\n" | git credential-osxkeychain erase`) y
+   `git push origin main` iniciando sesión como **joe150477** (usuario + PAT con scope `repo`).
 2. Esperar despliegue de Pages y verificar que el sitio diga **v42**; refrescar el celular
    (quitar/re-agregar la app) para ver grados nuevos al registrar pedidos.
 3. Usuario: tocar **"Pagado"** a los nuevos que ya pagaron (quedaron en "Debe").
