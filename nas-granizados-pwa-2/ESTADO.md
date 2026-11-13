@@ -34,11 +34,22 @@ Sync en tiempo real con Firebase; PIN de acceso 1987; auto-actualización por ve
   "Debe": Juan Pablo/Isabella/Mathías = perro, Fiorella = **slushie** (corregido).
 
 ## DESPLEGADO ✅
-- **v42 YA EN VIVO** (RAW + GitHub Pages ambos v42). Push resuelto tras arreglar la cuenta
-  (el llavero tenía token de `newacademyschool`; se reautenticó como `joe150477`).
+- **v42 EN VIVO** (fix conteo por cantidad, grados Prekínder/Preescolar, personas nuevas).
+
+## Hecho ahora (v43, SIN subir)
+- **Cupo diario de PERROS** (solo perros): panel en vista del día (presets 20/30/40/50, −/+,
+  "sin límite") que muestra vendidos/cupo/quedan y AGOTADO. **Bloquea la venta** al llegar a 0
+  (en el selector y al guardar; avisa "Solo quedan X" / "agotados"). Por día, se **sincroniza**
+  (Firebase `/stock/{fecha}/perro`, con fallback local `nas_stock_v1`). Helpers: `perroCupo/
+  perroSold/perroLeft/setPerroStock`. `APP_VERSION='43'`, `sw.js`→v43. Sintaxis/lógica OK.
 
 ## PENDIENTE
-1. En el celular: si no dice **v42**, cerrar/reabrir la app (o quitar/re-agregar) para saltar caché.
+1. **v43 YA COMMITEADO** (commits `ce65e99` + `0e64a19`; verificado que el cupo está en HEAD),
+   **pero PUSH BLOQUEADO** otra vez por 403 (llavero volvió al token de `newacademyschool`).
+   → **Subir con GitHub Desktop** (está logueado como joe150477; muestra 2 commits → Push origin).
+   Fix permanente pendiente: borrar entradas "github.com" del colegio en Acceso a Llaveros,
+   o pasar el remoto a **SSH** (el usuario quiere que le guíe para esto).
+2. En el celular: cuando el sitio diga **v43**, cerrar/reabrir la app para saltar caché.
 2. Usuario: tocar **"Pagado"** a los 4 pedidos de hoy que ya pagaron (quedaron en "Debe").
 3. (Opcional) anuncio WhatsApp del sanduchito combo.
 - Nota cuenta: si vuelve a fallar el push con 403, es que el llavero volvió a la cuenta del
